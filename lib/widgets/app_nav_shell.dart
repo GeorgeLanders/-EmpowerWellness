@@ -15,26 +15,18 @@ class AppNavShell extends StatefulWidget {
 class _AppNavShellState extends State<AppNavShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const AICoachScreen(),
-    const MovementLibraryScreen(),
-    const SOSScreen(),
+  final List<Widget> _screens = const [
+    DashboardScreen(),
+    AICoachScreen(),
+    MovementLibraryScreen(),
+    SOSScreen(),
   ];
 
-  final List<String> _titles = ['Home', 'Coach', 'Move', 'SOS'];
-  final List<IconData> _icons = [
-    Icons.home_rounded,
-    Icons.psychology_rounded,
-    Icons.fitness_center_rounded,
-    Icons.healing_rounded,
-  ];
-  
-  final List<Color> _accentColors = [
-    AppTheme.warmGold,
-    AppTheme.primaryPurple,
-    AppTheme.neonCyan,
-    AppTheme.hotCoral,
+  final List<_NavItem> _navItems = const [
+    _NavItem(icon: Icons.home_rounded, label: 'Home', color: Color(0xFFFFB800)),
+    _NavItem(icon: Icons.psychology_rounded, label: 'Coach', color: Color(0xFF8B5CF6)),
+    _NavItem(icon: Icons.fitness_center_rounded, label: 'Move', color: Color(0xFF00F5FF)),
+    _NavItem(icon: Icons.favorite_rounded, label: 'SOS', color: Color(0xFFFF3366)),
   ];
 
   @override
@@ -46,29 +38,78 @@ class _AppNavShellState extends State<AppNavShell> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppTheme.deepSpace.withValues(alpha: 0.8),
+          color: AppTheme.deepSpace.withValues(alpha: 0.9),
           border: Border(
             top: BorderSide(color: AppTheme.glassBorders, width: 1),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          selectedItemColor: _accentColors[_currentIndex],
-          unselectedItemColor: AppTheme.textSecondary,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          items: List.generate(4, (index) {
-            return BottomNavigationBarItem(
-              icon: Icon(_icons[index], color: _currentIndex == index ? _accentColors[index] : AppTheme.textSecondary),
-              label: _titles[index],
-            );
-          }),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 64,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(_navItems.length, (index) {
+                final item = _navItems[index];
+                final isActive = _currentIndex == index;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _currentIndex = index),
+                    behavior: HitTestBehavior.opaque,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isActive
+                                  ? item.color.withValues(alpha: 0.15)
+                                  : Colors.transparent,
+                            ),
+                            child: Icon(
+                              item.icon,
+                              color: isActive ? item.color : AppTheme.textSecondary,
+                              size: isActive ? 26 : 22,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            item.label,
+                            style: TextStyle(
+                              color: isActive ? item.color : AppTheme.textSecondary,
+                              fontSize: 11,
+                              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
         ),
       ),
     );
   }
+}
+
+class _NavItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _NavItem({required this.icon, required this.label, required this.color});
 }

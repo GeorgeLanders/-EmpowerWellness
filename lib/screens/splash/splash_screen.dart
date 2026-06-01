@@ -3,6 +3,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/animated_background.dart';
 import '../../services/storage_service.dart';
 import '../../widgets/app_nav_shell.dart';
+import '../welcome/welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -41,7 +42,6 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Navigate after animation completes
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _navigateNext();
@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen>
       MaterialPageRoute(
         builder: (_) => user.onboardingComplete
             ? const AppNavShell()
-            : const AppNavShell(), // placeholder — onboarding TBD
+            : const WelcomeScreen(),
       ),
     );
   }
@@ -78,7 +78,6 @@ class _SplashScreenState extends State<SplashScreen>
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // ── Glowing Logo Circle ──
                   Transform.scale(
                     scale: _scaleAnim.value,
                     child: Container(
@@ -87,10 +86,7 @@ class _SplashScreenState extends State<SplashScreen>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: const LinearGradient(
-                          colors: [
-                            AppTheme.primaryPurple,
-                            AppTheme.hotCoral,
-                          ],
+                          colors: [AppTheme.primaryPurple, AppTheme.hotCoral],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -115,10 +111,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
-                  // ── App Name ──
                   Opacity(
                     opacity: _fadeAnim.value,
                     child: const Text(
@@ -131,10 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
-                  // ── Tagline ──
                   Opacity(
                     opacity: _fadeAnim.value,
                     child: const Text(
@@ -146,10 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 60),
-
-                  // ── Loading Indicator ──
                   Opacity(
                     opacity: _fadeAnim.value,
                     child: const SizedBox(
