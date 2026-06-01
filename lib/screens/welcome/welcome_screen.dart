@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../../theme/app_theme.dart';
 import '../../widgets/animated_background.dart';
 import '../../widgets/glass_card.dart';
@@ -13,86 +14,111 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with TickerProviderStateMixin {
   final PageController _pageController = PageController();
   final _nameController = TextEditingController();
+  late AnimationController _entryController;
+  late Animation<double> _entryFade;
   int _currentPage = 0;
   String _selectedMobility = 'All';
   final List<String> _selectedGoals = [];
 
-  final List<Map<String, dynamic>> _onboardingPages = [
+  final List<Map<String, dynamic>> _pages = [
     {
       'emoji': '🌱',
-      'title': 'Welcome to Your World',
-      'subtitle': 'Every journey starts with a single step. Let\'s build your wellness empire together.',
+      'title': 'Welcome to\nYour World',
+      'subtitle': 'Every journey starts with a single step.\nLet\'s build your wellness empire together.',
+      'gradient': [AppTheme.primaryPurple, AppTheme.hotCoral],
     },
     {
       'emoji': '🏔️',
-      'title': 'Miniature World',
-      'subtitle': 'As you progress, your personal diorama evolves from a tiny seed into a magnificent empire.',
+      'title': 'Your Miniature\nWorld',
+      'subtitle': 'As you progress, your personal diorama\nevolves from a tiny seed to a magnificent empire.',
+      'gradient': [AppTheme.neonCyan, AppTheme.warmGold],
     },
     {
       'emoji': '🥒',
-      'title': 'Meet Big Pickle Free',
-      'subtitle': 'Your AI coach is here to guide you — no shame, no judgment, just real support.',
+      'title': 'Meet Big\nPickle Free',
+      'subtitle': 'Your AI coach is here to guide you —\nno shame, no judgment, just real support.',
+      'gradient': [AppTheme.roseGold, AppTheme.primaryPurple],
     },
   ];
 
   final List<String> _goalOptions = [
-    'Lose weight',
-    'Build strength',
-    'Eat better',
-    'Sleep more',
-    'Feel happier',
-    'Move more',
+    'Lose weight', 'Build strength', 'Eat better',
+    'Sleep well', 'Feel happier', 'Move more',
   ];
 
   final List<Map<String, dynamic>> _mobilityOptions = [
-    {'label': 'All', 'icon': Icons.accessibility_new, 'desc': 'I can do most activities'},
-    {'label': 'Seated', 'icon': Icons.chair, 'desc': 'I prefer seated exercises'},
-    {'label': 'Gentle', 'icon': Icons.spa, 'desc': 'I need low-impact movement'},
+    {'label': 'All', 'icon': Icons.accessibility_new_rounded, 'desc': 'I can do most activities', 'color': AppTheme.neonCyan},
+    {'label': 'Seated', 'icon': Icons.chair_rounded, 'desc': 'I prefer seated exercises', 'color': AppTheme.roseGold},
+    {'label': 'Gentle', 'icon': Icons.spa_rounded, 'desc': 'I need low-impact movement', 'color': AppTheme.mintGreen},
   ];
 
-  void _nextPage() {
-    if (_currentPage < _onboardingPages.length - 1) {
-      _pageController.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
-    } else {
-      _goToSetup();
-    }
-  }
-
-  void _goToSetup() {
-    // Stay on the last page which now shows setup form
-    _pageController.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
-  }
-
-  void _finishOnboarding() {
-    final name = _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'Friend';
-    final user = UserData(
-      name: name,
-      onboardingComplete: true,
-      goals: _selectedGoals,
-      mobilityPreference: _selectedMobility,
+  @override
+  void initState() {
+    super.initState();
+    _entryController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
     );
-    StorageService().saveUserData(user);
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const AppNavShell()),
-    );
-  }
-
-  void _skipOnboarding() {
-    final user = UserData(onboardingComplete: true);
-    StorageService().saveUserData(user);
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const AppNavShell()),
-    );
+    _entryFade = CurvedAnimation(parent: _entryController, curve: Curves.easeOut);
+    _entryController.forward();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _nameController.dispose();
+    _entryController.dispose();
     super.dispose();
+  }
+
+  void _nextPage() {
+    if (_currentPage < _pages.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOutCubic,
+      );
+    } else {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOutCubic,
+      );
+    }
+  }
+
+  void _finishOnboarding() {
+    final name = _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'Friend';
+    StorageService().saveUserData(UserData(
+      name: name,
+      onboardingComplete: true,
+      goals: _selectedGoals,
+      mobilityPreference: _selectedMobility,
+    ));
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const AppNavShell(),
+        transitionDuration: const Duration(milliseconds: 600),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+  }
+
+  void _skipOnboarding() {
+    StorageService().saveUserData(UserData(onboardingComplete: true));
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const AppNavShell(),
+        transitionDuration: const Duration(milliseconds: 600),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
   }
 
   @override
@@ -100,16 +126,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return AnimatedBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: PageView(
-            controller: _pageController,
-            onPageChanged: (i) => setState(() => _currentPage = i),
-            children: [
-              // Pages 0-2: Welcome intro slides
-              ..._onboardingPages.map((page) => _buildIntroPage(page)),
-              // Page 3: Setup form
-              _buildSetupPage(),
-            ],
+        body: FadeTransition(
+          opacity: _entryFade,
+          child: SafeArea(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (i) => setState(() => _currentPage = i),
+              children: [
+                ..._pages.map((p) => _buildIntroPage(p)),
+                _buildSetupPage(),
+              ],
+            ),
           ),
         ),
       ),
@@ -121,15 +148,42 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       padding: const EdgeInsets.all(AppTheme.space6),
       child: Column(
         children: [
-          const Spacer(),
-          Text(page['emoji'], style: const TextStyle(fontSize: 80)),
+          const Spacer(flex: 2),
+          // Animated emoji circle
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.5, end: 1.0),
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.elasticOut,
+            builder: (context, scale, child) {
+              return Transform.scale(scale: scale, child: child);
+            },
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(colors: page['gradient']),
+                boxShadow: [
+                  BoxShadow(
+                    color: (page['gradient'][0] as Color).withValues(alpha: 0.3),
+                    blurRadius: 40,
+                    spreadRadius: 10,
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(page['emoji'], style: const TextStyle(fontSize: 52)),
+              ),
+            ),
+          ),
           const SizedBox(height: AppTheme.space6),
           Text(
             page['title'],
             style: const TextStyle(
               color: AppTheme.textPrimary,
-              fontSize: 28,
+              fontSize: 30,
               fontWeight: FontWeight.bold,
+              height: 1.2,
             ),
             textAlign: TextAlign.center,
           ),
@@ -138,14 +192,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             page['subtitle'],
             style: const TextStyle(
               color: AppTheme.textSecondary,
-              fontSize: 16,
+              fontSize: 15,
               height: 1.5,
             ),
             textAlign: TextAlign.center,
           ),
-          const Spacer(),
+          const Spacer(flex: 3),
           _buildPageIndicator(),
-          const SizedBox(height: AppTheme.space6),
+          const SizedBox(height: AppTheme.space5),
           _buildButtons(showSkip: true),
           const SizedBox(height: AppTheme.space4),
         ],
@@ -155,42 +209,34 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Widget _buildSetupPage() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppTheme.space6),
+      padding: const EdgeInsets.all(AppTheme.space5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: AppTheme.space4),
-          const Text(
-            'Let\'s Personalize',
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
           const SizedBox(height: AppTheme.space2),
-          const Text(
-            'Tell us about yourself so we can tailor your experience.',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-          ),
-          const SizedBox(height: AppTheme.space6),
-
-          // Name input
-          const Text('What should we call you?',
-              style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
-          const SizedBox(height: AppTheme.space2),
-          _buildTextField(_nameController, 'Your name', Icons.person),
+          const Text('Let\'s Personalize',
+              style: TextStyle(color: AppTheme.textPrimary, fontSize: 28, fontWeight: FontWeight.bold)),
+          const SizedBox(height: AppTheme.space1),
+          const Text('Tell us about yourself. This is your journey.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
           const SizedBox(height: AppTheme.space5),
 
-          // Mobility preference
-          const Text('Movement preference',
+          // Name
+          const Text('Your Name',
+              style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
+          const SizedBox(height: AppTheme.space2),
+          _buildTextField(_nameController, 'What should we call you?', Icons.person_rounded),
+          const SizedBox(height: AppTheme.space5),
+
+          // Mobility
+          const Text('Movement Comfort',
               style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
           const SizedBox(height: AppTheme.space3),
           ..._mobilityOptions.map((opt) => _buildMobilityOption(opt)),
           const SizedBox(height: AppTheme.space5),
 
           // Goals
-          const Text('Your goals (pick any)',
+          const Text('Your Goals (pick any)',
               style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
           const SizedBox(height: AppTheme.space3),
           Wrap(
@@ -204,10 +250,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     selected ? _selectedGoals.remove(goal) : _selectedGoals.add(goal);
                   });
                 },
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: selected ? AppTheme.primaryPurple.withValues(alpha: 0.3) : AppTheme.glassWhite,
+                    color: selected ? AppTheme.primaryPurple.withValues(alpha: 0.2) : AppTheme.glassWhite,
                     borderRadius: BorderRadius.circular(AppTheme.radiusPill),
                     border: Border.all(
                       color: selected ? AppTheme.primaryPurple : AppTheme.glassBorders,
@@ -234,18 +281,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildTextField(TextEditingController controller, String hint, IconData icon) {
-    return GlassCard(
-      tint: AppTheme.primaryPurple,
-      opacity: 0.1,
-      child: TextField(
-        controller: controller,
-        style: const TextStyle(color: AppTheme.textPrimary),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: AppTheme.textMuted),
-          prefixIcon: Icon(icon, color: AppTheme.primaryPurple, size: 20),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        border: Border.all(color: AppTheme.glassBorders),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: TextField(
+            controller: controller,
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(color: AppTheme.textMuted),
+              prefixIcon: Icon(icon, color: AppTheme.primaryPurple, size: 20),
+              filled: true,
+              fillColor: AppTheme.deepSpace.withValues(alpha: 0.5),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+          ),
         ),
       ),
     );
@@ -255,31 +312,36 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final selected = _selectedMobility == opt['label'];
     return GestureDetector(
       onTap: () => setState(() => _selectedMobility = opt['label']),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: AppTheme.space2),
         child: GlassCard(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          tint: selected ? AppTheme.neonCyan : AppTheme.glassWhite,
-          opacity: selected ? 0.2 : 0.05,
+          tint: opt['color'] as Color,
+          opacity: selected ? 0.15 : 0.04,
+          glowing: selected,
+          glowColor: opt['color'] as Color,
+          glowIntensity: 0.1,
           child: Row(
             children: [
-              Icon(opt['icon'], color: selected ? AppTheme.neonCyan : AppTheme.textSecondary, size: 22),
-              const SizedBox(width: AppTheme.space4),
+              Icon(opt['icon'] as IconData, color: selected ? (opt['color'] as Color) : AppTheme.textSecondary, size: 22),
+              const SizedBox(width: AppTheme.space3),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(opt['label'],
+                    Text(opt['label'] as String,
                         style: TextStyle(
                             color: selected ? AppTheme.textPrimary : AppTheme.textSecondary,
                             fontWeight: FontWeight.bold,
                             fontSize: 14)),
-                    Text(opt['desc'],
+                    Text(opt['desc'] as String,
                         style: const TextStyle(color: AppTheme.textMuted, fontSize: 12)),
                   ],
                 ),
               ),
-              if (selected) const Icon(Icons.check_circle, color: AppTheme.neonCyan, size: 20),
+              if (selected)
+                Icon(Icons.check_circle, color: opt['color'] as Color, size: 20),
             ],
           ),
         ),
@@ -288,14 +350,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildPageIndicator() {
-    final totalPages = _onboardingPages.length + 1;
+    final totalPages = _pages.length + 1;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(totalPages, (i) {
         final active = i == _currentPage;
-        return Container(
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
           margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: active ? 24 : 8,
+          width: active ? 28 : 8,
           height: 8,
           decoration: BoxDecoration(
             color: active ? AppTheme.primaryPurple : AppTheme.textMuted.withValues(alpha: 0.3),
@@ -316,7 +380,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               child: const Text('Skip', style: TextStyle(color: AppTheme.textMuted)),
             ),
           ),
-        if (showSkip) const SizedBox(width: AppTheme.space4),
+        if (showSkip) const SizedBox(width: AppTheme.space3),
         Expanded(
           flex: 2,
           child: ElevatedButton(
@@ -325,12 +389,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               backgroundColor: AppTheme.primaryPurple,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusPill)),
+              elevation: 4,
+              shadowColor: AppTheme.primaryPurple.withValues(alpha: 0.4),
             ),
             child: Text(
-              showSkip ? 'Continue' : 'Start My Journey',
+              showSkip ? 'Continue' : 'Start My Journey ✨',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),

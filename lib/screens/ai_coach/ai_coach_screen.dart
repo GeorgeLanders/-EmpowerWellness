@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../theme/app_theme.dart';
@@ -13,24 +14,38 @@ class AICoachScreen extends StatefulWidget {
   State<AICoachScreen> createState() => _AICoachScreenState();
 }
 
-class _AICoachScreenState extends State<AICoachScreen> {
+class _AICoachScreenState extends State<AICoachScreen>
+    with TickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final StorageService _storage = StorageService();
   final List<Map<String, dynamic>> _messages = [];
+  final ScrollController _scrollController = ScrollController();
   bool _isTyping = false;
   bool _isConfigured = false;
   bool _isLoading = true;
   String _userName = 'Friend';
   String _apiKey = '';
   String _model = 'google/gemma-4-31b-it:free';
+  late AnimationController _avatarPulseController;
 
-  // Change this to your Render URL
   static const String _serverUrl = 'https://empowerwellness.onrender.com';
 
   @override
   void initState() {
     super.initState();
+    _avatarPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
     _loadConfig();
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    _avatarPulseController.dispose();
+    super.dispose();
   }
 
   void _loadConfig() {
@@ -38,12 +53,10 @@ class _AICoachScreenState extends State<AICoachScreen> {
     _model = _storage.getModel();
     final userData = _storage.loadUserData();
     _userName = userData.name.isNotEmpty ? userData.name : 'Friend';
-
     if (_apiKey.isNotEmpty) {
       _isConfigured = true;
-      _addCoachMessage('Welcome back, $_userName. I\'m Big Pickle Free, and I\'m here whenever you\'re ready. How are you feeling today?');
+      _addCoachMessage('Welcome back, $_userName! 💚 Big Pickle Free here. How are you feeling today?');
     }
-
     setState(() => _isLoading = false);
   }
 
@@ -52,59 +65,61 @@ class _AICoachScreenState extends State<AICoachScreen> {
     _model = model;
     await _storage.saveApiKey(apiKey);
     await _storage.saveModel(model);
-    setState(() {
-      _isConfigured = true;
-    });
-    _addCoachMessage('Hi $_userName! I\'m Big Pickle Free — your personal wellness coach. No judgment here, just support. What\'s on your mind today?');
+    setState(() => _isConfigured = true);
+    _addCoachMessage('Hi $_userName! 🥒 I\'m Big Pickle Free — your personal wellness coach. No judgment here, just real support. What\'s on your mind?');
+    _scrollToBottom();
   }
 
   void _addCoachMessage(String text) {
     setState(() {
-      _messages.add({
-        'role': 'coach',
-        'text': text,
-        'time': _formatTime(),
-      });
+      _messages.add({'role': 'coach', 'text': text, 'time': _formatTime()});
+    });
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent + 80,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      }
     });
   }
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-
     _messageController.clear();
     setState(() {
       _messages.add({'role': 'user', 'text': text, 'time': _formatTime()});
       _isTyping = true;
     });
+    _scrollToBottom();
 
     try {
       final history = _messages
-          .where((m) => m['role'] != 'user' || true)
           .map((m) => {'role': m['role'] == 'coach' ? 'assistant' : 'user', 'content': m['text']})
           .toList();
-      // Remove the last entry (the one we just added as user)
       if (history.isNotEmpty) history.removeLast();
 
       final response = await http.post(
         Uri.parse('$_serverUrl/chat'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'message': text,
-          'user_name': _userName,
-          'history': history,
-        }),
+        body: jsonEncode({'message': text, 'user_name': _userName, 'history': history}),
       ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final reply = data['reply'] ?? 'I\'m here for you. Tell me more about how you\'re feeling.';
+        final reply = data['reply'] ?? 'I\'m here for you. Tell me more. 💚';
         setState(() {
           _isTyping = false;
           _messages.add({'role': 'coach', 'text': reply, 'time': _formatTime()});
         });
       } else {
-        throw Exception('Server returned ${response.statusCode}');
+        throw Exception('${response.statusCode}');
       }
     } catch (e) {
       setState(() {
@@ -116,6 +131,7 @@ class _AICoachScreenState extends State<AICoachScreen> {
         });
       });
     }
+    _scrollToBottom();
   }
 
   String _formatTime() {
@@ -124,15 +140,11 @@ class _AICoachScreenState extends State<AICoachScreen> {
   }
 
   @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator(color: AppTheme.primaryPurple)),
+      );
     }
 
     return AnimatedBackground(
@@ -144,20 +156,37 @@ class _AICoachScreenState extends State<AICoachScreen> {
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.primaryPurple, AppTheme.roseGold],
-                  ),
-                ),
-                child: const Center(child: Text('🥒', style: TextStyle(fontSize: 16))),
+              AnimatedBuilder(
+                animation: _avatarPulseController,
+                builder: (context, _) {
+                  return Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppTheme.purpleCoral,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryPurple.withValues(alpha: 0.3 + _avatarPulseController.value * 0.2),
+                          blurRadius: 12 + _avatarPulseController.value * 8,
+                        ),
+                      ],
+                    ),
+                    child: const Center(child: Text('🥒', style: TextStyle(fontSize: 16))),
+                  );
+                },
               ),
               const SizedBox(width: 10),
-              const Text('Big Pickle Free',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary, fontSize: 18)),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Big Pickle Free',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary, fontSize: 16)),
+                  Text('Always here for you',
+                      style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                ],
+              ),
             ],
           ),
           centerTitle: true,
@@ -177,83 +206,111 @@ class _AICoachScreenState extends State<AICoachScreen> {
         child: GlassCard(
           padding: const EdgeInsets.all(AppTheme.space6),
           tint: AppTheme.primaryPurple,
-          opacity: 0.15,
+          opacity: 0.1,
+          glowing: true,
+          glowColor: AppTheme.primaryPurple,
+          glowIntensity: 0.08,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Center(child: Text('🥒', style: TextStyle(fontSize: 48))),
-              const SizedBox(height: AppTheme.space4),
-              const Text(
-                'Meet Big Pickle Free',
-                style: TextStyle(color: AppTheme.textPrimary, fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+              // Animated pickle
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.8, end: 1.0),
+                duration: const Duration(seconds: 2),
+                curve: Curves.easeInOut,
+                builder: (context, scale, child) {
+                  return Transform.scale(scale: scale, child: child);
+                },
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: AppTheme.purpleCoral,
+                    boxShadow: [
+                      BoxShadow(color: AppTheme.primaryPurple.withValues(alpha: 0.4), blurRadius: 25, spreadRadius: 5),
+                    ],
+                  ),
+                  child: const Center(child: Text('🥒', style: TextStyle(fontSize: 40))),
+                ),
               ),
+              const SizedBox(height: AppTheme.space5),
+              const Text('Meet Big Pickle Free',
+                  style: TextStyle(color: AppTheme.textPrimary, fontSize: 26, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center),
               const SizedBox(height: AppTheme.space2),
-              const Text(
-                'Your personal wellness coach — no shame, no judgment, just real support.',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
+              const Text('Your personal wellness coach — no shame, no judgment, just real support.',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14, height: 1.4),
+                  textAlign: TextAlign.center),
               const SizedBox(height: AppTheme.space5),
               const Text('OpenRouter API Key',
                   style: TextStyle(color: AppTheme.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
               const SizedBox(height: AppTheme.space2),
-              TextField(
-                controller: keyController,
-                style: const TextStyle(color: AppTheme.textPrimary),
-                decoration: InputDecoration(
-                  hintText: 'sk-or-v1-...',
-                  hintStyle: const TextStyle(color: AppTheme.textMuted),
-                  filled: true,
-                  fillColor: AppTheme.deepSpace.withValues(alpha: 0.5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                    borderSide: const BorderSide(color: AppTheme.glassBorders),
-                  ),
-                ),
-              ),
+              _buildInputField(keyController, 'sk-or-v1-...', Icons.key_rounded),
               const SizedBox(height: AppTheme.space4),
               const Text('Model (optional)',
                   style: TextStyle(color: AppTheme.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
               const SizedBox(height: AppTheme.space2),
-              TextField(
-                controller: modelController,
-                style: const TextStyle(color: AppTheme.textPrimary),
-                decoration: InputDecoration(
-                  hintText: 'google/gemma-4-31b-it:free',
-                  hintStyle: const TextStyle(color: AppTheme.textMuted),
-                  filled: true,
-                  fillColor: AppTheme.deepSpace.withValues(alpha: 0.5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                    borderSide: const BorderSide(color: AppTheme.glassBorders),
-                  ),
-                ),
-              ),
+              _buildInputField(modelController, 'google/gemma-4-31b-it:free', Icons.psychology_rounded),
               const SizedBox(height: AppTheme.space5),
-              ElevatedButton(
-                onPressed: () {
-                  if (keyController.text.trim().isNotEmpty) {
-                    _saveConfig(keyController.text.trim(), modelController.text.trim());
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryPurple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusPill)),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (keyController.text.trim().isNotEmpty) {
+                      _saveConfig(keyController.text.trim(), modelController.text.trim());
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryPurple,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusPill)),
+                    elevation: 4,
+                    shadowColor: AppTheme.primaryPurple.withValues(alpha: 0.4),
+                  ),
+                  child: const Text('Connect & Start Chatting',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
-                child: const Text('Connect & Start',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: AppTheme.space3),
-              const Text(
-                'Get a free key at openrouter.ai',
-                style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                textAlign: TextAlign.center,
+              TextButton(
+                onPressed: () {
+                  _saveConfig('demo-key', 'google/gemma-4-31b-it:free');
+                },
+                child: const Text('Skip for now (local mode)',
+                    style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputField(TextEditingController controller, String hint, IconData icon) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        border: Border.all(color: AppTheme.glassBorders),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: TextField(
+            controller: controller,
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(color: AppTheme.textMuted),
+              prefixIcon: Icon(icon, color: AppTheme.primaryPurple, size: 18),
+              filled: true,
+              fillColor: AppTheme.deepSpace.withValues(alpha: 0.5),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
           ),
         ),
       ),
@@ -263,17 +320,16 @@ class _AICoachScreenState extends State<AICoachScreen> {
   Widget _buildChatView() {
     return Column(
       children: [
-        // Quick action chips
         if (_messages.length <= 1) _buildQuickPrompts(),
         Expanded(
           child: ListView.builder(
+            controller: _scrollController,
             padding: const EdgeInsets.symmetric(horizontal: AppTheme.space5, vertical: AppTheme.space3),
             itemCount: _messages.length + (_isTyping ? 1 : 0),
             itemBuilder: (context, index) {
               if (_isTyping && index == _messages.length) return _buildTypingIndicator();
               final msg = _messages[index];
-              final isCoach = msg['role'] == 'coach';
-              return _buildMessageBubble(msg['text'], isCoach, msg['time']);
+              return _buildMessageBubble(msg['text'], msg['role'] == 'coach', msg['time']);
             },
           ),
         ),
@@ -284,33 +340,43 @@ class _AICoachScreenState extends State<AICoachScreen> {
 
   Widget _buildQuickPrompts() {
     final prompts = [
-      '💪 Help me get motivated',
-      '🧘 I\'m feeling stressed',
-      '🍎 What should I eat?',
-      '😴 I can\'t sleep',
-      '🚶 Suggest a quick workout',
+      {'emoji': '💪', 'text': 'Help me get motivated'},
+      {'emoji': '🧘', 'text': 'I\'m feeling stressed'},
+      {'emoji': '🍎', 'text': 'What should I eat?'},
+      {'emoji': '😴', 'text': 'I can\'t sleep'},
+      {'emoji': '🚶', 'text': 'Quick workout idea'},
+      {'emoji': '💧', 'text': 'Remind me to hydrate'},
     ];
     return Container(
-      height: 50,
-      margin: const EdgeInsets.only(top: 8),
+      height: 48,
+      margin: const EdgeInsets.only(top: 4),
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppTheme.space4),
         children: prompts.map((p) {
-          return GestureDetector(
-            onTap: () {
-              _messageController.text = p.substring(2).trim();
-              _sendMessage();
-            },
-            child: Container(
-              margin: const EdgeInsets.only(right: AppTheme.space2),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.glassPurple,
-                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-                border: Border.all(color: AppTheme.primaryPurple.withValues(alpha: 0.3)),
+          return Padding(
+            padding: const EdgeInsets.only(right: AppTheme.space2),
+            child: GestureDetector(
+              onTap: () {
+                _messageController.text = p['text']!;
+                _sendMessage();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.glassPurple,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                  border: Border.all(color: AppTheme.primaryPurple.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(p['emoji']!, style: const TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
+                    Text(p['text']!, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12)),
+                  ],
+                ),
               ),
-              child: Center(child: Text(p, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13))),
             ),
           );
         }).toList(),
@@ -319,119 +385,227 @@ class _AICoachScreenState extends State<AICoachScreen> {
   }
 
   Widget _buildTypingIndicator() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        child: GlassCard(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          tint: AppTheme.primaryPurple,
-          opacity: 0.2,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🥒', style: TextStyle(fontSize: 14)),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 40,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(3, (i) =>
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: AppTheme.textPrimary.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: AppTheme.purpleCoral,
+            ),
+            child: const Center(child: Text('🥒', style: TextStyle(fontSize: 14))),
           ),
-        ),
+          const SizedBox(width: AppTheme.space3),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryPurple.withValues(alpha: 0.12),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+              border: Border.all(color: AppTheme.primaryPurple.withValues(alpha: 0.15)),
+            ),
+            child: _TypingDots(),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildMessageBubble(String text, bool isCoach, String time) {
-    return Align(
-      alignment: isCoach ? Alignment.centerLeft : Alignment.centerRight,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
-        child: Column(
-          crossAxisAlignment: isCoach ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-          children: [
-            GlassCard(
-              padding: const EdgeInsets.all(AppTheme.space4),
-              tint: isCoach ? AppTheme.primaryPurple : AppTheme.roseGold,
-              opacity: isCoach ? 0.15 : 0.25,
-              child: Text(
-                text,
-                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15, height: 1.4),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: isCoach ? MainAxisAlignment.start : MainAxisAlignment.end,
+        children: [
+          if (isCoach) ...[
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: AppTheme.purpleCoral,
+              ),
+              child: const Center(child: Text('🥒', style: TextStyle(fontSize: 12))),
+            ),
+            const SizedBox(width: AppTheme.space2),
+          ],
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+              child: Column(
+                crossAxisAlignment: isCoach ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.space4),
+                    decoration: BoxDecoration(
+                      color: isCoach
+                          ? AppTheme.primaryPurple.withValues(alpha: 0.12)
+                          : AppTheme.hotCoral.withValues(alpha: 0.18),
+                      borderRadius: isCoach
+                          ? const BorderRadius.only(
+                              topLeft: Radius.circular(4),
+                              topRight: Radius.circular(16),
+                              bottomLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            )
+                          : const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(4),
+                              bottomLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            ),
+                      border: Border.all(
+                        color: isCoach
+                            ? AppTheme.primaryPurple.withValues(alpha: 0.15)
+                            : AppTheme.hotCoral.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Text(text,
+                        style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15, height: 1.45)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3, left: 4, right: 4),
+                    child: Text(time, style: const TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                  ),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
-              child: Text(time, style: const TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+          ),
+          if (!isCoach) ...[
+            const SizedBox(width: AppTheme.space2),
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(colors: [AppTheme.roseGold, AppTheme.warmGold]),
+              ),
+              child: Center(
+                child: Text(
+                  _userName.isNotEmpty ? _userName[0].toUpperCase() : '?',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+              ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildInputArea() {
     return Container(
-      padding: const EdgeInsets.all(AppTheme.space4),
+      padding: EdgeInsets.only(
+        left: AppTheme.space4,
+        right: AppTheme.space4,
+        top: AppTheme.space3,
+        bottom: MediaQuery.of(context).padding.bottom + AppTheme.space3,
+      ),
       decoration: BoxDecoration(
-        color: AppTheme.deepSpace.withValues(alpha: 0.8),
+        color: AppTheme.deepSpace.withValues(alpha: 0.85),
         border: Border(top: BorderSide(color: AppTheme.glassBorders, width: 1)),
       ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: GlassCard(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                radius: AppTheme.radiusPill,
-                opacity: 0.05,
-                child: TextField(
-                  controller: _messageController,
-                  style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: const InputDecoration(
-                    hintText: 'Share what\'s on your mind...',
-                    hintStyle: TextStyle(color: AppTheme.textMuted),
-                    border: InputBorder.none,
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                border: Border.all(color: AppTheme.glassBorders),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: TextField(
+                    controller: _messageController,
+                    style: const TextStyle(color: AppTheme.textPrimary),
+                    decoration: const InputDecoration(
+                      hintText: 'Share what\'s on your mind...',
+                      hintStyle: TextStyle(color: AppTheme.textMuted),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    ),
+                    onSubmitted: (_) => _sendMessage(),
+                    maxLines: null,
                   ),
-                  onSubmitted: (_) => _sendMessage(),
-                  maxLines: null,
                 ),
               ),
             ),
-            const SizedBox(width: AppTheme.space2),
-            GestureDetector(
-              onTap: _sendMessage,
-              child: Container(
-                width: 48,
-                height: 48,
+          ),
+          const SizedBox(width: AppTheme.space2),
+          GestureDetector(
+            onTap: _sendMessage,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: AppTheme.purpleCoral,
+                boxShadow: [
+                  BoxShadow(color: AppTheme.primaryPurple.withValues(alpha: 0.4), blurRadius: 12, spreadRadius: 1),
+                ],
+              ),
+              child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TypingDots extends StatefulWidget {
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots>
+    with TickerProviderStateMixin {
+  late AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+  }
+
+  @override
+  void dispose() { _c.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 36,
+      height: 12,
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, _) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(3, (i) {
+              final delay = i * 0.2;
+              final progress = ((_c.value - delay) % 1.0).clamp(0.0, 1.0);
+              final opacity = (progress < 0.5) ? progress * 2 : (1 - progress) * 2;
+              return Container(
+                width: 6,
+                height: 6,
                 decoration: BoxDecoration(
+                  color: AppTheme.textPrimary.withValues(alpha: 0.3 + opacity * 0.7),
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.primaryPurple, AppTheme.hotCoral],
-                  ),
-                  boxShadow: [
-                    BoxShadow(color: AppTheme.primaryPurple.withValues(alpha: 0.4), blurRadius: 8),
-                  ],
                 ),
-                child: const Icon(Icons.send, color: Colors.white, size: 20),
-              ),
-            ),
-          ],
-        ),
+              );
+            }),
+          );
+        },
       ),
     );
   }
