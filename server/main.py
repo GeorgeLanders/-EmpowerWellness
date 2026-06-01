@@ -46,6 +46,11 @@ def build_system_prompt(user_name: str) -> str:
     )
 
 
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "Big Pickle Free Wellness Proxy"}
+
+
 @app.get("/health")
 def health():
     return {
