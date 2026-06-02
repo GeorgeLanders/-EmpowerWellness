@@ -26,22 +26,22 @@ class _MovementLibraryScreenState extends State<MovementLibraryScreen>
   ];
 
   final List<MovementItem> _movements = [
-    MovementItem('Seated Leg Lifts', 'Seated', '3 min', 'assets/videos/seated_leg_lifts.mp4', 'Legs', 'Gentle leg strengthening from a chair. No standing required. Perfect for beginners or those with limited mobility.'),
-    MovementItem('Torso Twists', 'Seated', '2 min', 'assets/videos/torso_twist.mp4', 'Core', 'Gentle spinal rotation to improve flexibility and reduce back stiffness. Great for desk workers.'),
-    MovementItem('Seated Marching', 'Seated', '3 min', 'assets/videos/seated_march.mp4', 'Cardio', 'March in place while seated to get your heart pumping. Fun and accessible.'),
-    MovementItem('Neck Release', 'Seated', '2 min', 'assets/videos/neck_release.mp4', 'Upper Body', 'Release built-up tension in your neck and upper shoulders. Do this one daily.'),
-    MovementItem('Arm Circles', 'Standing', '2 min', 'assets/videos/arm_circles.mp4', 'Upper Body', 'Warm up your shoulders and improve range of motion. Great before any upper body work.'),
-    MovementItem('Heel Touches', 'Standing', '3 min', 'assets/videos/heel_touches.mp4', 'Balance', 'Improve balance and coordination with gentle heel-to-toe touches. Hold a chair for support.'),
-    MovementItem('Wall Stand', 'Standing', '5 min', 'assets/videos/wall_stand.mp4', 'Legs', 'Build leg strength and endurance by standing against a wall. Feel the burn safely.'),
-    MovementItem('Cat-Cow Stretch', 'Stretch', '3 min', 'assets/videos/cat_cow.mp4', 'Back', 'Classic yoga flow to improve spinal flexibility. Move slowly and breathe deeply.'),
-    MovementItem('Wrist Stretch', 'Stretch', '1 min', 'assets/videos/wrist_stretch.mp4', 'Arms', 'Prevent wrist pain and carpal tunnel with gentle stretching. Essential for phone users.'),
-    MovementItem('Butterfly Stretch', 'Stretch', '3 min', 'assets/videos/butterfly.mp4', 'Hips', 'Open your hips and inner thighs. Great for improving flexibility and reducing tightness.'),
-    MovementItem('Gentle Hamstring', 'Stretch', '2 min', 'assets/videos/hamstring.mp4', 'Legs', 'Loosen tight hamstrings while seated. Tight hamstrings contribute to back pain.'),
-    MovementItem('Wall Push-ups', 'Strength', '3 min', 'assets/videos/wall_pushups.mp4', 'Upper Body', 'Build chest and arm strength without getting on the floor. Adjust angle for difficulty.'),
-    MovementItem('Chair Squats', 'Strength', '5 min', 'assets/videos/chair_squats.mp4', 'Legs', 'Sit and stand from a chair to build functional leg and core strength. Very practical!'),
-    MovementItem('Calf Raises', 'Strength', '2 min', 'assets/videos/calf_raises.mp4', 'Legs', 'Simple but effective for ankle stability and lower leg strength. Hold a wall for balance.'),
-    MovementItem('Indoor Walk', 'Walk', '10 min', 'assets/videos/indoor_walk.mp4', 'Cardio', 'Walk in place or around your home. Put on your favorite music and just move!'),
-    MovementItem('Nature Walk', 'Walk', '15 min', 'assets/videos/nature_walk.mp4', 'Cardio', 'Step outside and enjoy a refreshing walk. Fresh air + movement = mood boost.'),
+    MovementItem('Seated Leg Lifts', 'Seated', '3 min', 'assets/videos/seated-leg-lifts.mp4', 'Legs', 'Gentle leg strengthening from a chair. No standing required. Perfect for beginners or those with limited mobility.'),
+    MovementItem('Torso Twists', 'Seated', '2 min', 'assets/videos/torso-twists.mp4', 'Core', 'Gentle spinal rotation to improve flexibility and reduce back stiffness. Great for desk workers.'),
+    MovementItem('Seated Marching', 'Seated', '3 min', 'assets/videos/seated-marching.mp4', 'Cardio', 'March in place while seated to get your heart pumping. Fun and accessible.'),
+    MovementItem('Neck Release', 'Seated', '2 min', 'assets/videos/neck-release.mp4', 'Upper Body', 'Release built-up tension in your neck and upper shoulders. Do this one daily.'),
+    MovementItem('Arm Circles', 'Standing', '2 min', 'assets/videos/arm-circles.mp4', 'Upper Body', 'Warm up your shoulders and improve range of motion. Great before any upper body work.'),
+    MovementItem('Heel Touches', 'Standing', '3 min', 'assets/videos/heel-touches.mp4', 'Balance', 'Improve balance and coordination with gentle heel-to-toe touches. Hold a chair for support.'),
+    MovementItem('Wall Stand', 'Standing', '5 min', 'assets/videos/wall-stand.mp4', 'Legs', 'Build leg strength and endurance by standing against a wall. Feel the burn safely.'),
+    MovementItem('Cat-Cow Stretch', 'Stretch', '3 min', 'assets/videos/cat-cow.mp4', 'Back', 'Classic yoga flow to improve spinal flexibility. Move slowly and breathe deeply.'),
+    MovementItem('Wrist Stretch', 'Stretch', '1 min', 'assets/videos/wrist-stretch.mp4', 'Arms', 'Prevent wrist pain and carpal tunnel with gentle stretching. Essential for phone users.'),
+    MovementItem('Butterfly Stretch', 'Stretch', '3 min', 'assets/videos/butterfly-stretch.mp4', 'Hips', 'Open your hips and inner thighs. Great for improving flexibility and reducing tightness.'),
+    MovementItem('Gentle Hamstring', 'Stretch', '2 min', 'assets/videos/gentle-hamstring.mp4', 'Legs', 'Loosen tight hamstrings while seated. Tight hamstrings contribute to back pain.'),
+    MovementItem('Wall Push-ups', 'Strength', '3 min', 'assets/videos/wall-pushups.mp4', 'Upper Body', 'Build chest and arm strength without getting on the floor. Adjust angle for difficulty.'),
+    MovementItem('Chair Squats', 'Strength', '5 min', 'assets/videos/chair-squats.mp4', 'Legs', 'Sit and stand from a chair to build functional leg and core strength. Very practical!'),
+    MovementItem('Calf Raises', 'Strength', '2 min', 'assets/videos/calf-raises.mp4', 'Legs', 'Simple but effective for ankle stability and lower leg strength. Hold a wall for balance.'),
+    MovementItem('Indoor Walk', 'Walk', '10 min', 'assets/videos/indoor-walk.mp4', 'Cardio', 'Walk in place or around your home. Put on your favorite music and just move!'),
+    MovementItem('Nature Walk', 'Walk', '15 min', 'assets/videos/nature-walk.mp4', 'Cardio', 'Step outside and enjoy a refreshing walk. Fresh air + movement = mood boost.'),
   ];
 
   List<MovementItem> get _filteredMovements {

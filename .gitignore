@@ -112,3 +112,5 @@ ehthumbs_vista.db
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
+*.mp4
+assets/videos/exercise-videos/
