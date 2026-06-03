@@ -380,13 +380,14 @@ async def chat(req: ChatRequest):
 
     # If the model returned something but it was cut off (very short, no ending
     # punctuation, or a trailing comma), retry once. Some models (big-pickle)
-    # occasionally stop mid-sentence. After one retry, fall back to local.
+    # occasionally stop mid-sentence. After one retry, fall back to local
+    # instead of returning a truncated reply.
     def _looks_complete(text: str) -> bool:
         if not text:
             return False
-        if len(text) < 25:
+        if len(text) < 50:
             return False
-        return text[-1] in ".!?'\"" or text.endswith(("\u2728", "\u2728"))
+        return text[-1] in ".!?'\"" or text.endswith("\u2728")
 
     if not _looks_complete(reply):
         try:
@@ -396,13 +397,13 @@ async def chat(req: ChatRequest):
                 if _looks_complete(retry_reply):
                     reply = retry_reply
         except Exception:
-            # Retry is best-effort; keep the original partial reply if it fails
+            # Retry is best-effort; fall through to fallback below
             pass
 
     # Some models (e.g. big-pickle) return empty content for very short or
-    # trivial messages. Fall back to a local Lumina-style response so the user
-    # never sees a silent bubble.
-    if not reply:
+    # trivial messages, or truncated replies. Fall back to a local Lumina-
+    # style response so the user never sees a silent or cut-off bubble.
+    if not _looks_complete(reply):
         reply = local_fallback(req.message)
 
     return ChatResponse(reply=reply)
