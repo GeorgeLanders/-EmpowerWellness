@@ -85,7 +85,10 @@ async def chat(req: ChatRequest):
 
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(OPENROUTER_URL, json=payload, headers=headers)
-        resp.raise_for_status()
+        if resp.status_code != 200:
+            return ChatResponse(
+                reply=f"I'm having trouble reaching my AI backend right now. (Error {resp.status_code}: {resp.text[:200]})"
+            )
         data = resp.json()
 
     reply = data["choices"][0]["message"]["content"]
