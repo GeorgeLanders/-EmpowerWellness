@@ -10,7 +10,7 @@ class AICoachService {
   }
 
   String _apiKey = '';
-  String _model = 'google/gemma-4-31b-it:free';
+  String _model = 'big-pickle';
 
   String get model => _model;
 
@@ -28,12 +28,10 @@ class AICoachService {
 
     try {
       final response = await http.post(
-        Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
+        Uri.parse('https://opencode.ai/zen/v1/chat/completions'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_apiKey',
-          'HTTP-Referer': 'https://empowerwellness.app',
-          'X-Title': 'EmpowerWellness',
         },
         body: jsonEncode({
           'model': _model,
@@ -64,7 +62,7 @@ class AICoachService {
   }
 
   String _systemPrompt(String userName) {
-    return '''You are Big Pickle Free, a warm, supportive AI wellness coach for the EmpowerWellness app. 
+    return '''You are Lumina, a warm, supportive AI wellness coach for the EmpowerWellness app.
 Your user is $userName. Your style is:
 - Shame-free, never judgmental
 - Encouraging and uplifting

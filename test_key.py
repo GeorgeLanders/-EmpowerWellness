@@ -1,51 +1,49 @@
+"""Quick smoke test for the OpenCode API key.
+
+Usage:
+    export OPENCODE_API_KEY=sk-...
+    python test_key.py
+"""
+import os
+import sys
+
 import httpx
 
-# Reconstruct key from parts to avoid auto-redaction
-prefix = "sk-yXi"
-middle = "OOMreUUejD7kD0iVN6b8eyxp0z789Y5WVqhRdDD7eR55NLhiuB"
-suffix = "X5Q2UVDlF8L"
-key = prefix + middle + suffix
 
-print(f"Key length: {len(key)}")
-print(f"Key starts with: {key[:30]}...")
+def main() -> int:
+    api_key = os.environ.get("OPENCODE_API_KEY", "").strip()
+    if not api_key:
+        print("ERROR: Set OPENCODE_API_KEY env var first.")
+        return 1
 
-# Test against OpenRouter
-resp = httpx.post(
-    'https://openrouter.ai/api/v1/chat/completions',
-    headers={
-        'Authorization': f'Bearer {key}',
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://empowerwellness.onrender.com',
-    },
-    json={
-        'model': 'deepseek/deepseek-v4-flash-free',
-        'messages': [{'role': 'user', 'content': 'say hi in one word'}],
-        'max_tokens': 10
-    },
-    timeout=15
-)
-print(f"Status: {resp.status_code}")
-print(f"Response keys: {list(resp.json().keys())}")
-print(f"Response: {resp.text[:500]}")
+    print(f"Key length: {len(api_key)}")
+    print(f"Key starts with: {api_key[:8]}...")
 
-if resp.status_code == 200:
-    print("KEY WORKS!")
-else:
-    print("Trying alternative model...")
-    resp2 = httpx.post(
-        'https://openrouter.ai/api/v1/chat/completions',
+    model = os.environ.get("OPENCODE_MODEL", "big-pickle")
+    url = "https://opencode.ai/zen/v1/chat/completions"
+
+    resp = httpx.post(
+        url,
         headers={
-            'Authorization': f'Bearer {key}',
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://empowerwellness.onrender.com',
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
         },
         json={
-            'model': 'nvidia/nemotron-4-mini-super:free',
-            'messages': [{'role': 'user', 'content': 'say hi in one word'}],
-            'max_tokens': 10
+            "model": model,
+            "messages": [{"role": "user", "content": "say hi in one word"}],
+            "max_tokens": 10,
         },
-        timeout=15
+        timeout=15,
     )
-    print(f"Alt model status: {resp2.status_code}")
-    print(f"Alt model response keys: {list(resp2.json().keys())}")
-    print(f"Alt model response: {resp2.text[:500]}")
+    print(f"Status: {resp.status_code}")
+    print(f"Response: {resp.text[:500]}")
+
+    if resp.status_code == 200:
+        print("KEY WORKS!")
+        return 0
+    print("KEY FAILED — check model name and key validity.")
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

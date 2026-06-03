@@ -7,10 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 
-# OpenRouter config — uses env var on Render, falls back to embedded key
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "sk-yXiOOMreUUejD7kD0iVN6b8eyxp0z789Y5WVqhRdDD7eR55NLhiuBX5Q2UVDlF8L")
-OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free")
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+# OpenCode config — OPENCODE_API_KEY must be set in Render dashboard env vars.
+# No hardcoded fallback: prevents accidentally using a dead/expired key.
+OPENCODE_API_KEY = os.environ.get("OPENCODE_API_KEY", "")
+OPENCODE_MODEL = os.environ.get("OPENCODE_MODEL", "big-pickle")
+OPENCODE_URL = "https://opencode.ai/zen/v1/chat/completions"
 
 
 app = FastAPI(title="Lumina Wellness Proxy")
@@ -56,15 +57,17 @@ def root():
 def health():
     return {
         "status": "ok",
-        "key_configured": bool(OPENROUTER_API_KEY),
+        "provider": "opencode",
+        "model": OPENCODE_MODEL,
+        "key_configured": bool(OPENCODE_API_KEY),
     }
 
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
-    if not OPENROUTER_API_KEY:
+    if not OPENCODE_API_KEY:
         return ChatResponse(
-            reply="Server is not configured with an Wellness AI Secure Key. Please contact support."
+            reply="Server is not configured with a Wellness AI Secure Key. Please contact support."
         )
 
     messages = [{"role": "system", "content": build_system_prompt(req.user_name)}]
@@ -73,18 +76,18 @@ async def chat(req: ChatRequest):
     messages.append({"role": "user", "content": req.message})
 
     payload = {
-        "model": OPENROUTER_MODEL,
+        "model": OPENCODE_MODEL,
         "messages": messages,
         "max_tokens": 300,
     }
 
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {OPENCODE_API_KEY}",
         "Content-Type": "application/json",
     }
 
     async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(OPENROUTER_URL, json=payload, headers=headers)
+        resp = await client.post(OPENCODE_URL, json=payload, headers=headers)
         if resp.status_code != 200:
             return ChatResponse(
                 reply=f"I'm having trouble reaching my AI backend right now. (Error {resp.status_code}: {resp.text[:200]})"
