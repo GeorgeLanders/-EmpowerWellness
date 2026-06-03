@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/animated_background.dart';
-import '../../services/storage_service.dart';
-import '../../models/user_data.dart';
 
 class ProgressDashboardScreen extends StatefulWidget {
   const ProgressDashboardScreen({super.key});
@@ -15,8 +13,6 @@ class ProgressDashboardScreen extends StatefulWidget {
 
 class _ProgressDashboardScreenState extends State<ProgressDashboardScreen>
     with TickerProviderStateMixin {
-  final _storage = StorageService();
-  late UserData _user;
   late AnimationController _entryController;
   late Animation<double> _entryAnim;
 
@@ -41,7 +37,6 @@ class _ProgressDashboardScreenState extends State<ProgressDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _user = _storage.loadUserData();
 
     _entryController = AnimationController(
       vsync: this,

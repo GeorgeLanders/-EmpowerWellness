@@ -23,25 +23,53 @@ class _MovementLibraryScreenState extends State<MovementLibraryScreen>
     {'label': 'Stretch', 'icon': '🤸', 'color': AppTheme.roseGold},
     {'label': 'Strength', 'icon': '💪', 'color': AppTheme.hotCoral},
     {'label': 'Walk', 'icon': '🚶', 'color': AppTheme.mintGreen},
+    {'label': 'Breathing', 'icon': '🌬️', 'color': AppTheme.iceBlue},
+    {'label': 'Mindfulness', 'icon': '🧘', 'color': AppTheme.softLavender},
+    {'label': 'Posture', 'icon': '🪞', 'color': AppTheme.emberOrange},
   ];
 
   final List<MovementItem> _movements = [
+    // ── Seated (5) ──
     MovementItem('Seated Leg Lifts', 'Seated', '3 min', 'assets/videos/seated-leg-lifts.mp4', 'Legs', 'Gentle leg strengthening from a chair. No standing required. Perfect for beginners or those with limited mobility.'),
     MovementItem('Torso Twists', 'Seated', '2 min', 'assets/videos/torso-twists.mp4', 'Core', 'Gentle spinal rotation to improve flexibility and reduce back stiffness. Great for desk workers.'),
     MovementItem('Seated Marching', 'Seated', '3 min', 'assets/videos/seated-marching.mp4', 'Cardio', 'March in place while seated to get your heart pumping. Fun and accessible.'),
     MovementItem('Neck Release', 'Seated', '2 min', 'assets/videos/neck-release.mp4', 'Upper Body', 'Release built-up tension in your neck and upper shoulders. Do this one daily.'),
+    MovementItem('Seated Forward Fold', 'Seated', '2 min', 'assets/videos/seated-forward-fold.mp4', 'Back', 'A gentle forward bend from a chair that releases lower back tension. Breathe deeply as you fold.'),
+
+    // ── Standing (3) ──
     MovementItem('Arm Circles', 'Standing', '2 min', 'assets/videos/arm-circles.mp4', 'Upper Body', 'Warm up your shoulders and improve range of motion. Great before any upper body work.'),
     MovementItem('Heel Touches', 'Standing', '3 min', 'assets/videos/heel-touches.mp4', 'Balance', 'Improve balance and coordination with gentle heel-to-toe touches. Hold a chair for support.'),
     MovementItem('Wall Stand', 'Standing', '5 min', 'assets/videos/wall-stand.mp4', 'Legs', 'Build leg strength and endurance by standing against a wall. Feel the burn safely.'),
+
+    // ── Stretch (4) ──
     MovementItem('Cat-Cow Stretch', 'Stretch', '3 min', 'assets/videos/cat-cow.mp4', 'Back', 'Classic yoga flow to improve spinal flexibility. Move slowly and breathe deeply.'),
     MovementItem('Wrist Stretch', 'Stretch', '1 min', 'assets/videos/wrist-stretch.mp4', 'Arms', 'Prevent wrist pain and carpal tunnel with gentle stretching. Essential for phone users.'),
     MovementItem('Butterfly Stretch', 'Stretch', '3 min', 'assets/videos/butterfly-stretch.mp4', 'Hips', 'Open your hips and inner thighs. Great for improving flexibility and reducing tightness.'),
     MovementItem('Gentle Hamstring', 'Stretch', '2 min', 'assets/videos/gentle-hamstring.mp4', 'Legs', 'Loosen tight hamstrings while seated. Tight hamstrings contribute to back pain.'),
+
+    // ── Strength (3) ──
     MovementItem('Wall Push-ups', 'Strength', '3 min', 'assets/videos/wall-pushups.mp4', 'Upper Body', 'Build chest and arm strength without getting on the floor. Adjust angle for difficulty.'),
     MovementItem('Chair Squats', 'Strength', '5 min', 'assets/videos/chair-squats.mp4', 'Legs', 'Sit and stand from a chair to build functional leg and core strength. Very practical!'),
     MovementItem('Calf Raises', 'Strength', '2 min', 'assets/videos/calf-raises.mp4', 'Legs', 'Simple but effective for ankle stability and lower leg strength. Hold a wall for balance.'),
+    MovementItem('Wall Push Variation', 'Strength', '3 min', 'assets/videos/wall-push-variation.mp4', 'Upper Body', 'A deeper angle wall push-up for an extra challenge. Build real pressing strength.'),
+
+    // ── Walk (2) ──
     MovementItem('Indoor Walk', 'Walk', '10 min', 'assets/videos/indoor-walk.mp4', 'Cardio', 'Walk in place or around your home. Put on your favorite music and just move!'),
     MovementItem('Nature Walk', 'Walk', '15 min', 'assets/videos/nature-walk.mp4', 'Cardio', 'Step outside and enjoy a refreshing walk. Fresh air + movement = mood boost.'),
+
+    // ── Walking Cardio (1) ──
+    MovementItem('Side Steps', 'Walk', '3 min', 'assets/videos/side-steps.mp4', 'Cardio', 'Step side to side for low-impact cardio. A fun way to raise your heart rate.'),
+
+    // ── Breathing (2) ──
+    MovementItem('Box Breathing', 'Breathing', '4 min', 'assets/videos/box-breathing.mp4', 'Calm', 'A four-part breath pattern used by Navy SEALs to calm the nervous system. Very soothing.'),
+    MovementItem('Deep Relaxation', 'Breathing', '5 min', 'assets/videos/deep-relaxation.mp4', 'Calm', 'Lengthen your exhale to trigger your body\'s relaxation response. Perfect before bed.'),
+
+    // ── Mindfulness (2) ──
+    MovementItem('Body Scan', 'Mindfulness', '6 min', 'assets/videos/body-scan.mp4', 'Awareness', 'A guided journey through your body, releasing tension wherever you find it. Profoundly relaxing.'),
+    MovementItem('Mindful Breath', 'Mindfulness', '5 min', 'assets/videos/mindful-breath.mp4', 'Awareness', 'A simple meditation anchoring you to the present moment. Just you and your breath.'),
+
+    // ── Posture (1) ──
+    MovementItem('Posture Reset', 'Posture', '3 min', 'assets/videos/posture-reset.mp4', 'Spine', 'Stand against a wall to realign your spine. Great after long hours at a desk.'),
   ];
 
   List<MovementItem> get _filteredMovements {
@@ -353,6 +381,9 @@ class _MovementLibraryScreenState extends State<MovementLibraryScreen>
       case 'Stretch': return '🤸';
       case 'Strength': return '💪';
       case 'Walk': return '🚶';
+      case 'Breathing': return '🌬️';
+      case 'Mindfulness': return '🧘';
+      case 'Posture': return '🪞';
       default: return '🏋️';
     }
   }
@@ -364,6 +395,9 @@ class _MovementLibraryScreenState extends State<MovementLibraryScreen>
       case 'Stretch': return AppTheme.roseGold;
       case 'Strength': return AppTheme.hotCoral;
       case 'Walk': return AppTheme.mintGreen;
+      case 'Breathing': return AppTheme.iceBlue;
+      case 'Mindfulness': return AppTheme.softLavender;
+      case 'Posture': return AppTheme.emberOrange;
       default: return AppTheme.neonCyan;
     }
   }

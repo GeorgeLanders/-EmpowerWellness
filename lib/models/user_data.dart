@@ -9,6 +9,10 @@ class UserData {
   List<String> goals;
   String mobilityPreference;
 
+  // Onboarding intake fields
+  String initialMood;       // mood captured during onboarding (Great/Good/Okay/Low)
+  String activityLevel;     // self-described current activity level
+
   // Tracking fields for Profile/Progress/Settings
   int currentStreak;        // consecutive days with activity
   int totalMovements;       // lifetime movements completed
@@ -26,6 +30,8 @@ class UserData {
     this.onboardingComplete = false,
     this.goals = const [],
     this.mobilityPreference = 'All',
+    this.initialMood = 'Good',
+    this.activityLevel = 'Just starting out',
     this.currentStreak = 0,
     this.totalMovements = 0,
     this.daysActive = 0,
@@ -43,6 +49,8 @@ class UserData {
     'onboardingComplete': onboardingComplete,
     'goals': goals,
     'mobilityPreference': mobilityPreference,
+    'initialMood': initialMood,
+    'activityLevel': activityLevel,
     'currentStreak': currentStreak,
     'totalMovements': totalMovements,
     'daysActive': daysActive,
@@ -60,6 +68,8 @@ class UserData {
     onboardingComplete: json['onboardingComplete'] ?? false,
     goals: List<String>.from(json['goals'] ?? []),
     mobilityPreference: json['mobilityPreference'] ?? 'All',
+    initialMood: json['initialMood'] ?? 'Good',
+    activityLevel: json['activityLevel'] ?? 'Just starting out',
     currentStreak: json['currentStreak'] ?? 0,
     totalMovements: json['totalMovements'] ?? 0,
     daysActive: json['daysActive'] ?? 0,

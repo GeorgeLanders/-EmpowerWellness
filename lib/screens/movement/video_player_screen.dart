@@ -4,7 +4,6 @@ import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/animated_background.dart';
 import '../../services/storage_service.dart';
-import '../../models/user_data.dart';
 import 'movement_library_screen.dart';
 
 class VideoPlayerScreen extends StatefulWidget {

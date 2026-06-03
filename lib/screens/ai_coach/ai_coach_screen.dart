@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:math';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/animated_background.dart';
-import '../../services/storage_service.dart';
 
 class AICoachScreen extends StatefulWidget {
   const AICoachScreen({super.key});
@@ -17,14 +17,50 @@ class AICoachScreen extends StatefulWidget {
 class _AICoachScreenState extends State<AICoachScreen>
     with TickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
-  final StorageService _storage = StorageService();
   final List<Map<String, dynamic>> _messages = [];
   final ScrollController _scrollController = ScrollController();
   bool _isTyping = false;
-  bool _isConfigured = false;
   bool _isLoading = true;
-  String _userName = 'Friend';
+  final String _userName = 'Friend';
   late AnimationController _avatarPulseController;
+
+  // ── Quick Prompts System ──
+  String _selectedCategory = 'All';
+  int _staggerNonce = 0;
+  int _flashedPromptIndex = -1;
+  final Random _rng = Random();
+  late List<Map<String, dynamic>> _prompts;
+
+  static const List<Map<String, dynamic>> _allPrompts = [
+    // Energy & Motivation (purple)
+    {'emoji': '💪', 'text': 'Help me get motivated', 'category': 'Energy', 'color': AppTheme.primaryPurple},
+    {'emoji': '⚡', 'text': 'I need an energy boost', 'category': 'Energy', 'color': AppTheme.primaryPurple},
+    {'emoji': '🌟', 'text': 'I want to feel stronger', 'category': 'Energy', 'color': AppTheme.primaryPurple},
+    {'emoji': '🏆', 'text': 'Celebrate a win with me', 'category': 'Energy', 'color': AppTheme.primaryPurple},
+    // Mood & Calm (cyan)
+    {'emoji': '🧘', 'text': "I'm feeling stressed", 'category': 'Mood', 'color': AppTheme.neonCyan},
+    {'emoji': '💙', 'text': "I'm feeling down", 'category': 'Mood', 'color': AppTheme.neonCyan},
+    {'emoji': '😤', 'text': "I'm frustrated today", 'category': 'Mood', 'color': AppTheme.neonCyan},
+    {'emoji': '😰', 'text': "I'm anxious about something", 'category': 'Mood', 'color': AppTheme.neonCyan},
+    // Sleep & Rest (gold)
+    {'emoji': '😴', 'text': "I can't sleep", 'category': 'Sleep', 'color': AppTheme.warmGold},
+    {'emoji': '🌙', 'text': 'Help me wind down', 'category': 'Sleep', 'color': AppTheme.warmGold},
+    {'emoji': '☕', 'text': 'I had too much caffeine', 'category': 'Sleep', 'color': AppTheme.warmGold},
+    {'emoji': '🌅', 'text': "I'm tired in the morning", 'category': 'Sleep', 'color': AppTheme.warmGold},
+    // Body & Movement (coral)
+    {'emoji': '🚶', 'text': 'Quick workout idea', 'category': 'Body', 'color': AppTheme.hotCoral},
+    {'emoji': '💧', 'text': 'Remind me to hydrate', 'category': 'Body', 'color': AppTheme.hotCoral},
+    {'emoji': '🍎', 'text': 'What should I eat?', 'category': 'Body', 'color': AppTheme.hotCoral},
+    {'emoji': '🦴', 'text': "I'm sore today", 'category': 'Body', 'color': AppTheme.hotCoral},
+  ];
+
+  static const List<Map<String, dynamic>> _categories = [
+    {'key': 'All', 'emoji': '✨', 'color': AppTheme.softLavender, 'label': 'All suggestions'},
+    {'key': 'Energy', 'emoji': '⚡', 'color': AppTheme.primaryPurple, 'label': 'Energy & Motivation'},
+    {'key': 'Mood', 'emoji': '💙', 'color': AppTheme.neonCyan, 'label': 'Mood & Calm'},
+    {'key': 'Sleep', 'emoji': '🌙', 'color': AppTheme.warmGold, 'label': 'Sleep & Rest'},
+    {'key': 'Body', 'emoji': '💪', 'color': AppTheme.hotCoral, 'label': 'Body & Movement'},
+  ];
 
   static const String _serverUrl = 'https://empowerwellness.onrender.com';
 
@@ -36,9 +72,9 @@ class _AICoachScreenState extends State<AICoachScreen>
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
     // Auto-connect: server holds the API key
-    _isConfigured = true;
     _addCoachMessage('Welcome back, $_userName! 💚 I\'m Lumina — your personal wellness coach. How are you feeling today?');
     setState(() => _isLoading = false);
+    _prompts = List<Map<String, dynamic>>.from(_allPrompts);
   }
 
   @override
@@ -197,49 +233,271 @@ class _AICoachScreenState extends State<AICoachScreen>
   }
 
   Widget _buildQuickPrompts() {
-    final prompts = [
-      {'emoji': '💪', 'text': 'Help me get motivated'},
-      {'emoji': '🧘', 'text': 'I\'m feeling stressed'},
-      {'emoji': '🍎', 'text': 'What should I eat?'},
-      {'emoji': '😴', 'text': 'I can\'t sleep'},
-      {'emoji': '🚶', 'text': 'Quick workout idea'},
-      {'emoji': '💧', 'text': 'Remind me to hydrate'},
-    ];
-    return Container(
-      height: 48,
-      margin: const EdgeInsets.only(top: 4),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppTheme.space4),
-        children: prompts.map((p) {
-          return Padding(
-            padding: const EdgeInsets.only(right: AppTheme.space2),
-            child: GestureDetector(
-              onTap: () {
-                _messageController.text = p['text']!;
-                _sendMessage();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppTheme.glassPurple,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-                  border: Border.all(color: AppTheme.primaryPurple.withValues(alpha: 0.2)),
+    // Filter prompts by selected category
+    final List<Map<String, dynamic>> filteredPrompts = _selectedCategory == 'All'
+        ? List<Map<String, dynamic>>.from(_prompts)
+        : _prompts.where((p) => p['category'] == _selectedCategory).toList();
+
+    // Resolve current category color for the header
+    final currentCat = _categories.firstWhere(
+      (c) => c['key'] == _selectedCategory,
+      orElse: () => _categories.first,
+    );
+    final Color categoryColor = currentCat['color'] as Color;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: AppTheme.space2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header row: section label + refresh ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppTheme.space5, 0, AppTheme.space2, AppTheme.space2),
+            child: Row(
+              children: [
+                const Text(
+                  'Quick suggestions',
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 11,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(p['emoji']!, style: const TextStyle(fontSize: 14)),
-                    const SizedBox(width: 6),
-                    Text(p['text']!, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12)),
-                  ],
+                const Spacer(),
+                GestureDetector(
+                  onTap: _shufflePrompts,
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.all(AppTheme.space1),
+                    decoration: BoxDecoration(
+                      color: AppTheme.glassWhite,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                      border: Border.all(color: AppTheme.glassBorders),
+                    ),
+                    child: const Icon(
+                      Icons.refresh_rounded,
+                      color: AppTheme.textSecondary,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Category filter row (GlassCard) ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.space4),
+            child: GlassCard(
+              padding: const EdgeInsets.symmetric(vertical: AppTheme.space2, horizontal: AppTheme.space3),
+              radius: AppTheme.radiusPill,
+              tint: AppTheme.glassWhite,
+              opacity: 0.05,
+              child: SizedBox(
+                height: 36,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _categories.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: AppTheme.space2),
+                  itemBuilder: (context, idx) {
+                    final cat = _categories[idx];
+                    final Color catColor = cat['color'] as Color;
+                    final bool isSelected = _selectedCategory == cat['key'];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedCategory = cat['key'] as String;
+                          _staggerNonce++;
+                          _flashedPromptIndex = -1;
+                        });
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        padding: const EdgeInsets.symmetric(horizontal: AppTheme.space3, vertical: AppTheme.space1),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? catColor.withValues(alpha: 0.22)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                          border: Border.all(
+                            color: isSelected
+                                ? catColor.withValues(alpha: 0.6)
+                                : AppTheme.glassBorders,
+                            width: isSelected ? 1.2 : 1.0,
+                          ),
+                          boxShadow: [
+                            if (isSelected)
+                              BoxShadow(
+                                color: catColor.withValues(alpha: 0.35),
+                                blurRadius: 10,
+                                spreadRadius: 0,
+                              ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(cat['emoji'] as String, style: const TextStyle(fontSize: 13)),
+                            const SizedBox(width: 5),
+                            Text(
+                              cat['key'] as String,
+                              style: TextStyle(
+                                color: isSelected ? catColor : AppTheme.textSecondary,
+                                fontSize: 12,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
-          );
-        }).toList(),
+          ),
+
+          // ── Category name label above the prompt row ──
+          if (filteredPrompts.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppTheme.space5, AppTheme.space2, AppTheme.space4, AppTheme.space1),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: categoryColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: categoryColor.withValues(alpha: 0.6), blurRadius: 6),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.space1),
+                  Text(
+                    currentCat['label'] as String,
+                    style: TextStyle(
+                      color: categoryColor,
+                      fontSize: 10,
+                      letterSpacing: 1.0,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // ── Prompt chips (filtered, staggered, with color flash) ──
+          SizedBox(
+            height: 56,
+            child: filteredPrompts.isEmpty
+                ? Center(
+                    child: Text(
+                      'No prompts here',
+                      style: TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.space4),
+                    itemCount: filteredPrompts.length,
+                    itemBuilder: (context, index) {
+                      final p = filteredPrompts[index];
+                      final Color pColor = p['color'] as Color;
+                      final bool isFlashing = _flashedPromptIndex == index;
+                      return TweenAnimationBuilder<double>(
+                        key: ValueKey('prompt_${_staggerNonce}_$index'),
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: Duration(milliseconds: 300 + (index * 50).clamp(0, 300)),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return Transform.translate(
+                            offset: Offset(0, 14 * (1 - value)),
+                            child: Opacity(opacity: value, child: child),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: AppTheme.space2),
+                          child: GestureDetector(
+                            onTap: () => _onPromptTapped(index, p),
+                            behavior: HitTestBehavior.opaque,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOutCubic,
+                              height: 56,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isFlashing
+                                    ? pColor.withValues(alpha: 0.35)
+                                    : AppTheme.glassWhite,
+                                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                                border: Border(
+                                  left: BorderSide(color: pColor, width: 4),
+                                  top: BorderSide(color: AppTheme.glassBorders),
+                                  right: BorderSide(color: AppTheme.glassBorders),
+                                  bottom: BorderSide(color: AppTheme.glassBorders),
+                                ),
+                                boxShadow: [
+                                  if (isFlashing)
+                                    BoxShadow(
+                                      color: pColor.withValues(alpha: 0.45),
+                                      blurRadius: 14,
+                                      spreadRadius: 0,
+                                    ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(p['emoji'] as String, style: const TextStyle(fontSize: 16)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    p['text'] as String,
+                                    style: const TextStyle(
+                                      color: AppTheme.textPrimary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _onPromptTapped(int index, Map<String, dynamic> prompt) {
+    // Trigger the highlight flash (color flash for 300ms)
+    setState(() => _flashedPromptIndex = index);
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      setState(() => _flashedPromptIndex = -1);
+      _messageController.text = prompt['text'] as String;
+      _sendMessage();
+    });
+  }
+
+  void _shufflePrompts() {
+    setState(() {
+      _prompts.shuffle(_rng);
+      _staggerNonce++;
+      _flashedPromptIndex = -1;
+    });
   }
 
   Widget _buildTypingIndicator() {
