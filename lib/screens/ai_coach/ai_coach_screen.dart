@@ -24,8 +24,6 @@ class _AICoachScreenState extends State<AICoachScreen>
   bool _isConfigured = false;
   bool _isLoading = true;
   String _userName = 'Friend';
-  String _apiKey = '';
-  String _model = 'google/gemma-4-31b-it:free';
   late AnimationController _avatarPulseController;
 
   static const String _serverUrl = 'https://empowerwellness.onrender.com';
@@ -37,7 +35,10 @@ class _AICoachScreenState extends State<AICoachScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    _loadConfig();
+    // Auto-connect: server holds the API key
+    _isConfigured = true;
+    _addCoachMessage('Welcome back, $_userName! 💚 I\'m Lumina — your personal wellness coach. How are you feeling today?');
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -46,28 +47,6 @@ class _AICoachScreenState extends State<AICoachScreen>
     _scrollController.dispose();
     _avatarPulseController.dispose();
     super.dispose();
-  }
-
-  void _loadConfig() {
-    _apiKey = _storage.getApiKey();
-    _model = _storage.getModel();
-    final userData = _storage.loadUserData();
-    _userName = userData.name.isNotEmpty ? userData.name : 'Friend';
-    if (_apiKey.isNotEmpty) {
-      _isConfigured = true;
-      _addCoachMessage('Welcome back, $_userName! 💚 Big Pickle Free here. How are you feeling today?');
-    }
-    setState(() => _isLoading = false);
-  }
-
-  void _saveConfig(String apiKey, String model) async {
-    _apiKey = apiKey;
-    _model = model;
-    await _storage.saveApiKey(apiKey);
-    await _storage.saveModel(model);
-    setState(() => _isConfigured = true);
-    _addCoachMessage('Hi $_userName! 🥒 I\'m Big Pickle Free — your personal wellness coach. No judgment here, just real support. What\'s on your mind?');
-    _scrollToBottom();
   }
 
   void _addCoachMessage(String text) {
@@ -126,7 +105,7 @@ class _AICoachScreenState extends State<AICoachScreen>
         _isTyping = false;
         _messages.add({
           'role': 'coach',
-          'text': 'I\'m having trouble connecting right now. Make sure your API key is set up, or try again in a moment. I\'m still here for you. 💚',
+          'text': 'I\'m having trouble connecting right now. Make sure your Secure Key is set up, or try again in a moment. I\'m still here for you. 💚',
           'time': _formatTime(),
         });
       });
@@ -181,7 +160,7 @@ class _AICoachScreenState extends State<AICoachScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Big Pickle Free',
+                  Text('Lumina',
                       style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary, fontSize: 16)),
                   Text('Always here for you',
                       style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
@@ -191,128 +170,7 @@ class _AICoachScreenState extends State<AICoachScreen>
           ),
           centerTitle: true,
         ),
-        body: _isConfigured ? _buildChatView() : _buildSetupView(),
-      ),
-    );
-  }
-
-  Widget _buildSetupView() {
-    final keyController = TextEditingController();
-    final modelController = TextEditingController(text: _model);
-
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space6),
-        child: GlassCard(
-          padding: const EdgeInsets.all(AppTheme.space6),
-          tint: AppTheme.primaryPurple,
-          opacity: 0.1,
-          glowing: true,
-          glowColor: AppTheme.primaryPurple,
-          glowIntensity: 0.08,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Animated pickle
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.8, end: 1.0),
-                duration: const Duration(seconds: 2),
-                curve: Curves.easeInOut,
-                builder: (context, scale, child) {
-                  return Transform.scale(scale: scale, child: child);
-                },
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: AppTheme.purpleCoral,
-                    boxShadow: [
-                      BoxShadow(color: AppTheme.primaryPurple.withValues(alpha: 0.4), blurRadius: 25, spreadRadius: 5),
-                    ],
-                  ),
-                  child: const Center(child: Text('🥒', style: TextStyle(fontSize: 40))),
-                ),
-              ),
-              const SizedBox(height: AppTheme.space5),
-              const Text('Meet Big Pickle Free',
-                  style: TextStyle(color: AppTheme.textPrimary, fontSize: 26, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: AppTheme.space2),
-              const Text('Your personal wellness coach — no shame, no judgment, just real support.',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14, height: 1.4),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: AppTheme.space5),
-              const Text('OpenRouter API Key',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
-              const SizedBox(height: AppTheme.space2),
-              _buildInputField(keyController, 'sk-or-v1-...', Icons.key_rounded),
-              const SizedBox(height: AppTheme.space4),
-              const Text('Model (optional)',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
-              const SizedBox(height: AppTheme.space2),
-              _buildInputField(modelController, 'google/gemma-4-31b-it:free', Icons.psychology_rounded),
-              const SizedBox(height: AppTheme.space5),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (keyController.text.trim().isNotEmpty) {
-                      _saveConfig(keyController.text.trim(), modelController.text.trim());
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryPurple,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusPill)),
-                    elevation: 4,
-                    shadowColor: AppTheme.primaryPurple.withValues(alpha: 0.4),
-                  ),
-                  child: const Text('Connect & Start Chatting',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(height: AppTheme.space3),
-              TextButton(
-                onPressed: () {
-                  _saveConfig('demo-key', 'google/gemma-4-31b-it:free');
-                },
-                child: const Text('Skip for now (local mode)',
-                    style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInputField(TextEditingController controller, String hint, IconData icon) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        border: Border.all(color: AppTheme.glassBorders),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: TextField(
-            controller: controller,
-            style: const TextStyle(color: AppTheme.textPrimary),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(color: AppTheme.textMuted),
-              prefixIcon: Icon(icon, color: AppTheme.primaryPurple, size: 18),
-              filled: true,
-              fillColor: AppTheme.deepSpace.withValues(alpha: 0.5),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            ),
-          ),
-        ),
+        body: _buildChatView(),
       ),
     );
   }

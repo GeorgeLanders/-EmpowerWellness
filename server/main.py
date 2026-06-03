@@ -7,12 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemma-4-31b-it:free")
+# OpenRouter config — uses env var on Render, falls back to embedded key
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "sk-yXiOOMreUUejD7kD0iVN6b8eyxp0z789Y5WVqhRdDD7eR55NLhiuBX5Q2UVDlF8L")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "deepseek/deepseek-v4-flash-free")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
-app = FastAPI(title="Big Pickle Free Wellness Proxy")
+app = FastAPI(title="Lumina Wellness Proxy")
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,7 +41,7 @@ class ChatResponse(BaseModel):
 
 def build_system_prompt(user_name: str) -> str:
     return (
-        f"You are Big Pickle Free, a warm and shame-free wellness coach. "
+        f"You are Lumina, a warm and shame-free wellness coach. "
         f"Keep your replies to 2-3 sentences. Address the user by name ({user_name}). "
         f"Be encouraging, practical, and never judgmental."
     )
@@ -48,7 +49,7 @@ def build_system_prompt(user_name: str) -> str:
 
 @app.get("/")
 def root():
-    return {"status": "ok", "service": "Big Pickle Free Wellness Proxy"}
+    return {"status": "ok", "service": "Lumina Wellness Proxy"}
 
 
 @app.get("/health")
@@ -63,7 +64,7 @@ def health():
 async def chat(req: ChatRequest):
     if not OPENROUTER_API_KEY:
         return ChatResponse(
-            reply="Server is not configured with an OpenRouter API key. Please contact support."
+            reply="Server is not configured with an Wellness AI Secure Key. Please contact support."
         )
 
     messages = [{"role": "system", "content": build_system_prompt(req.user_name)}]
