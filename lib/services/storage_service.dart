@@ -52,6 +52,16 @@ class StorageService {
     await _prefs?.setString(_modelKey, model);
   }
 
+  // ── Generic Bool Storage (Settings) ───────────────
+
+  bool getBool(String key, {bool defaultValue = false}) {
+    return _prefs?.getBool(key) ?? defaultValue;
+  }
+
+  Future<void> setBool(String key, bool value) async {
+    await _prefs?.setBool(key, value);
+  }
+
   // ── Reset ─────────────────────────────────────────
 
   Future<void> eraseAll() async {

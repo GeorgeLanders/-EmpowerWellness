@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/animated_background.dart';
+import '../../widgets/app_nav_shell.dart';
 import '../../services/diorama_controller.dart';
 import '../../services/storage_service.dart';
 import '../../models/user_data.dart';
@@ -122,6 +123,20 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     return Row(
       children: [
+        // Profile button
+        GestureDetector(
+          onTap: () => navigateToProfile(context),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.glassWhite,
+              border: Border.all(color: AppTheme.glassBorders),
+            ),
+            child: const Icon(Icons.person_outline, color: AppTheme.textSecondary, size: 20),
+          ),
+        ),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,6 +213,20 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
               ),
             ),
+          ),
+        ),
+        const SizedBox(width: AppTheme.space2),
+        // Settings button
+        GestureDetector(
+          onTap: () => navigateToSettings(context),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.glassWhite,
+              border: Border.all(color: AppTheme.glassBorders),
+            ),
+            child: const Icon(Icons.settings_outlined, color: AppTheme.textSecondary, size: 20),
           ),
         ),
       ],
@@ -299,6 +328,34 @@ class _DashboardScreenState extends State<DashboardScreen>
           const SizedBox(height: AppTheme.space4),
           // Progress bar
           _buildProgressTrack(progress, state),
+          const SizedBox(height: AppTheme.space4),
+          // View Progress button
+          GestureDetector(
+            onTap: () => navigateToProgress(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                color: AppTheme.glassWhite,
+                border: Border.all(color: _getWorldColor(state).withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.bar_chart, color: AppTheme.textSecondary, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    'View Full Progress',
+                    style: TextStyle(
+                      color: _getWorldColor(state),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

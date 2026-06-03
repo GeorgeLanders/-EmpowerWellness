@@ -1,9 +1,6 @@
-{
-  "env": {
-    "ANTHROPIC_AUTH_TOKEN": "YOUR_OPENROUTER_KEY_HERE",
-    "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "google/gemma-4-31b-it:free",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "google/gemma-4-31b-it:free",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "google/gemma-4-31b-it:free"
-  }
-}
+"claudeCode.environmentVariables": [
+  { "name": "ANTHROPIC_BASE_URL", "value": "http://localhost:8082" },
+  { "name": "ANTHROPIC_AUTH_TOKEN", "value": "freecc" },
+  { "name": "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY", "value": "1" },
+  { "name": "CLAUDE_CODE_AUTO_COMPACT_WINDOW", "value": "190000" }
+]

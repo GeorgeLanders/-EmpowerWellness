@@ -9,6 +9,14 @@ class UserData {
   List<String> goals;
   String mobilityPreference;
 
+  // Tracking fields for Profile/Progress/Settings
+  int currentStreak;        // consecutive days with activity
+  int totalMovements;       // lifetime movements completed
+  int daysActive;           // total days with any activity
+  String lastActiveDate;    // ISO date string of last activity
+  List<String> completedExerciseIds; // exercise IDs completed
+  int dioramaProgress;      // 0-100 progress toward Empire
+
   UserData({
     this.name = 'Friend',
     this.waterCups = 0,
@@ -18,6 +26,12 @@ class UserData {
     this.onboardingComplete = false,
     this.goals = const [],
     this.mobilityPreference = 'All',
+    this.currentStreak = 0,
+    this.totalMovements = 0,
+    this.daysActive = 0,
+    this.lastActiveDate = '',
+    this.completedExerciseIds = const [],
+    this.dioramaProgress = 0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -29,6 +43,12 @@ class UserData {
     'onboardingComplete': onboardingComplete,
     'goals': goals,
     'mobilityPreference': mobilityPreference,
+    'currentStreak': currentStreak,
+    'totalMovements': totalMovements,
+    'daysActive': daysActive,
+    'lastActiveDate': lastActiveDate,
+    'completedExerciseIds': completedExerciseIds,
+    'dioramaProgress': dioramaProgress,
   };
 
   factory UserData.fromJson(Map<String, dynamic> json) => UserData(
@@ -40,5 +60,11 @@ class UserData {
     onboardingComplete: json['onboardingComplete'] ?? false,
     goals: List<String>.from(json['goals'] ?? []),
     mobilityPreference: json['mobilityPreference'] ?? 'All',
+    currentStreak: json['currentStreak'] ?? 0,
+    totalMovements: json['totalMovements'] ?? 0,
+    daysActive: json['daysActive'] ?? 0,
+    lastActiveDate: json['lastActiveDate'] ?? '',
+    completedExerciseIds: List<String>.from(json['completedExerciseIds'] ?? []),
+    dioramaProgress: json['dioramaProgress'] ?? 0,
   );
 }

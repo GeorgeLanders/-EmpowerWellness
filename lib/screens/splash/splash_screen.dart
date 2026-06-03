@@ -78,61 +78,91 @@ class _SplashScreenState extends State<SplashScreen>
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Animated logo
                   Transform.scale(
                     scale: _scaleAnim.value,
                     child: Container(
-                      width: 120,
-                      height: 120,
+                      width: 130,
+                      height: 130,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [AppTheme.primaryPurple, AppTheme.hotCoral],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryPurple.withValues(alpha: 0.5),
-                            blurRadius: 40,
-                            spreadRadius: 10,
+                            color: AppTheme.primaryPurple.withValues(alpha: 0.4),
+                            blurRadius: 50,
+                            spreadRadius: 15,
+                          ),
+                          BoxShadow(
+                            color: AppTheme.hotCoral.withValues(alpha: 0.2),
+                            blurRadius: 80,
+                            spreadRadius: 20,
                           ),
                         ],
                       ),
-                      child: const Center(
-                        child: Text(
-                          'EW',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                          ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/branding/logo_square.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            // Fallback if image not found
+                            return Container(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [AppTheme.primaryPurple, AppTheme.hotCoral],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'EW',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 44,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 32),
+                  // App name
                   Opacity(
                     opacity: _fadeAnim.value,
-                    child: const Text(
-                      'EmpowerWellness',
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
+                    child: ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [AppTheme.primaryPurple, AppTheme.neonCyan, AppTheme.hotCoral],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds),
+                      child: const Text(
+                        'EmpowerWellness',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2.0,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 8),
+                  // Tagline
                   Opacity(
-                    opacity: _fadeAnim.value,
+                    opacity: _fadeAnim.value * 0.8,
                     child: const Text(
                       'Your world is evolving',
                       style: TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 14,
                         fontStyle: FontStyle.italic,
+                        letterSpacing: 1.0,
                       ),
                     ),
                   ),

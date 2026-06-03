@@ -114,3 +114,8 @@ ehthumbs_vista.db
 **/ios/Runner/GeneratedPluginRegistrant.*
 *.mp4
 assets/videos/exercise-videos/
+assets/videos/*.mp4
+assets/videos/final_premium/
+assets/videos/thumbnails/
+assets/videos/exercise-videos/
+build/app/outputs/video/

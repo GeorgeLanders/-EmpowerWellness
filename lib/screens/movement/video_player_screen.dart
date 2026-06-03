@@ -3,6 +3,8 @@ import 'package:video_player/video_player.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/animated_background.dart';
+import '../../services/storage_service.dart';
+import '../../models/user_data.dart';
 import 'movement_library_screen.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
@@ -86,6 +88,57 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     return '$minutes:$seconds';
   }
 
+  /// Log the completed movement and update user stats
+  void _logMovement() {
+    final storage = StorageService();
+    final user = storage.loadUserData();
+
+    // Update tracking fields
+    user.totalMovements++;
+    if (!user.completedExerciseIds.contains(widget.movementItem.title)) {
+      user.completedExerciseIds = [...user.completedExerciseIds, widget.movementItem.title];
+    }
+
+    // Update streak
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    if (user.lastActiveDate != today) {
+      user.daysActive++;
+      // Check if consecutive day
+      if (user.lastActiveDate.isNotEmpty) {
+        final lastDate = DateTime.parse(user.lastActiveDate);
+        final diff = DateTime.now().difference(lastDate).inDays;
+        if (diff == 1) {
+          user.currentStreak++;
+        } else {
+          user.currentStreak = 1;
+        }
+      } else {
+        user.currentStreak = 1;
+      }
+      user.lastActiveDate = today;
+    }
+
+    // Update diorama progress (caps at 100)
+    user.dioramaProgress = ((user.totalMovements * 2).clamp(0, 100));
+
+    storage.saveUserData(user);
+
+    // Show confirmation
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '✅ ${widget.movementItem.title} completed! Total: ${user.totalMovements}',
+            style: const TextStyle(color: AppTheme.textPrimary),
+          ),
+          backgroundColor: AppTheme.voidPurple,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBackground(
@@ -167,6 +220,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               ),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: AppTheme.space6),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  _logMovement();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.warmGold,
+                  foregroundColor: AppTheme.deepSpace,
+                  elevation: 8,
+                  shadowColor: AppTheme.warmGold.withValues(alpha: 0.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                  ),
+                ),
+                child: const Text(
+                  'Complete & Log Movement',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -197,17 +273,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Video
                   Center(
                     child: AspectRatio(
                       aspectRatio: _controller!.value.aspectRatio,
                       child: VideoPlayer(_controller!),
                     ),
                   ),
-
-                  // Controls Overlay
                   if (_showControls) ...[
-                    // Play/Pause + Seek row
                     Positioned(
                       bottom: 80,
                       left: AppTheme.space4,
@@ -247,8 +319,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         ),
                       ),
                     ),
-
-                    // Progress Slider
                     Positioned(
                       bottom: 20,
                       left: AppTheme.space4,
@@ -303,14 +373,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             ),
           ),
         ),
-
-        // Bottom: Movement info + Complete button
         Padding(
           padding: const EdgeInsets.all(AppTheme.space5),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Movement info
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -321,15 +388,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 ],
               ),
               const SizedBox(height: AppTheme.space4),
-
-              // Complete & Log Movement button
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: _logMovement,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.warmGold,
                     foregroundColor: AppTheme.deepSpace,
@@ -341,10 +404,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   ),
                   child: const Text(
                     'Complete & Log Movement',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ),

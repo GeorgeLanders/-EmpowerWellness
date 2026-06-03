@@ -4,6 +4,9 @@ import '../screens/home/dashboard_screen.dart';
 import '../screens/ai_coach/ai_coach_screen.dart';
 import '../screens/movement/movement_library_screen.dart';
 import '../screens/sos/sos_screen.dart';
+import '../screens/profile/profile_screen.dart';
+import '../screens/settings/settings_screen.dart';
+import '../screens/progress/progress_dashboard_screen.dart';
 
 class AppNavShell extends StatefulWidget {
   const AppNavShell({super.key});
@@ -105,6 +108,30 @@ class _AppNavShellState extends State<AppNavShell> {
       ),
     );
   }
+}
+
+/// Navigate to the Profile screen (accessible from dashboard)
+void navigateToProfile(BuildContext context) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const ProfileScreen()),
+  );
+}
+
+/// Navigate to the Settings screen
+void navigateToSettings(BuildContext context) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+  );
+}
+
+/// Navigate to the Progress Dashboard screen
+void navigateToProgress(BuildContext context) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const ProgressDashboardScreen()),
+  );
 }
 
 class _NavItem {
