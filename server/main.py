@@ -73,7 +73,16 @@ def local_fallback(message: str) -> str:
         return "Sleep can be elusive, but your body knows how to rest. A slow breath in for four, out for six, can work wonders. Want to try together?"
     if any(w in lower for w in ("bored", "nothing to do", "restless")):
         return "Restlessness is just energy waiting for a direction. A short walk, a stretch, or even naming three things you can see can shift the moment. What sounds doable?"
-    if any(w in lower for w in ("eat", "food", "hungry", "meal", "snack")):
+    if any(w in lower for w in ("eat", "food", "hungry", "meal", "snack", "recipe", "cook", "dinner", "lunch", "breakfast", "menu")):
+        if any(w in lower for w in ("plan", "prepare", "prep", "ideas", "suggest", "what should i", "what to", "menu", "cook", "recipe", "dinner", "lunch", "breakfast", "tonight", "today")):
+            return (
+                "Here is a simple, balanced day of meals that supports steady energy:\n"
+                "  \u2022 Breakfast: oatmeal with berries and a spoon of nut butter\n"
+                "  \u2022 Lunch: grilled chicken or chickpea salad with leafy greens, olive oil, and lemon\n"
+                "  \u2022 Snack: apple slices with a small handful of almonds\n"
+                "  \u2022 Dinner: baked salmon (or lentils) with roasted sweet potato and steamed broccoli\n"
+                "Always pair protein and fiber to stay full longer. Want a recipe for any of these?"
+            )
         return "Nourishing yourself is one of the kindest things you can do. Something colorful and simple is often exactly what the body asks for. What sounds good right now?"
     return "That is a powerful thing to share. Remember, your journey is not a sprint — it is a dance. Let us focus on one small step forward. What feels most empowering right now?"
 

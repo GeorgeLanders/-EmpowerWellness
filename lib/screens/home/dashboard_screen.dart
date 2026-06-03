@@ -63,6 +63,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
   }
 
+  String _today() {
+    final now = DateTime.now();
+    return '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
   void _logMood(String mood) {
     _user.mood = mood;
     _storage.saveUserData(_user);
@@ -550,6 +555,18 @@ class _DashboardScreenState extends State<DashboardScreen>
                   color: AppTheme.neonCyan,
                   onTap: _logWater,
                   glow: _user.waterCups >= 8,
+                ),
+              ),
+              const SizedBox(width: AppTheme.space3),
+              Expanded(
+                child: _buildLogButton(
+                  icon: Icons.restaurant_rounded,
+                  label: 'Meals',
+                  value: _user.meals.isEmpty
+                      ? '—'
+                      : '${_user.meals.where((m) => m.date == _today()).length} today',
+                  color: AppTheme.warmGold,
+                  onTap: () => navigateToMeals(context),
                 ),
               ),
               const SizedBox(width: AppTheme.space3),

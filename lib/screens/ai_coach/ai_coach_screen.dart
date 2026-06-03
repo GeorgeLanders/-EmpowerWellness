@@ -3,9 +3,11 @@ import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/animated_background.dart';
+import '../../services/storage_service.dart';
 
 class AICoachScreen extends StatefulWidget {
   const AICoachScreen({super.key});
@@ -21,8 +23,11 @@ class _AICoachScreenState extends State<AICoachScreen>
   final ScrollController _scrollController = ScrollController();
   bool _isTyping = false;
   bool _isLoading = true;
+  bool _voiceEnabled = true;
+  bool _isSpeaking = false;
   final String _userName = 'Friend';
   late AnimationController _avatarPulseController;
+  late FlutterTts _tts;
 
   // ── Quick Prompts System ──
   String _selectedCategory = 'All';
@@ -52,6 +57,7 @@ class _AICoachScreenState extends State<AICoachScreen>
     {'emoji': '💧', 'text': 'Remind me to hydrate', 'category': 'Body', 'color': AppTheme.hotCoral},
     {'emoji': '🍎', 'text': 'What should I eat?', 'category': 'Body', 'color': AppTheme.hotCoral},
     {'emoji': '🦴', 'text': "I'm sore today", 'category': 'Body', 'color': AppTheme.hotCoral},
+    {'emoji': '🍳', 'text': 'Help me log my meals', 'category': 'Body', 'color': AppTheme.hotCoral},
   ];
 
   static const List<Map<String, dynamic>> _categories = [
@@ -71,14 +77,50 @@ class _AICoachScreenState extends State<AICoachScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+    _voiceEnabled = StorageService().getBool('voice_guidance', defaultValue: true);
+    _initTts();
     // Auto-connect: server holds the API key
     _addCoachMessage('Welcome back, $_userName! 💚 I\'m Lumina — your personal wellness coach. How are you feeling today?');
     setState(() => _isLoading = false);
     _prompts = List<Map<String, dynamic>>.from(_allPrompts);
   }
 
+  Future<void> _initTts() async {
+    _tts = FlutterTts();
+    await _tts.setLanguage('en-US');
+    await _tts.setSpeechRate(0.42);   // slower, comfortable for seniors
+    await _tts.setPitch(1.0);
+    await _tts.setVolume(1.0);
+    // Try to pick a warm female voice if available; fall back to default
+    try {
+      final voices = await _tts.getVoices;
+      if (voices is List) {
+        final preferred = voices.firstWhere(
+          (v) {
+            final n = (v['name'] ?? '').toString().toLowerCase();
+            return n.contains('female') || n.contains('samantha') ||
+                   n.contains('aria') || n.contains('karen') ||
+                   n.contains('fiona') || n.contains('victoria') ||
+                   n.contains('nova') || n.contains('allison');
+          },
+          orElse: () => null,
+        );
+        if (preferred != null && preferred['name'] != null) {
+          await _tts.setVoice({'name': preferred['name'], 'locale': preferred['locale'] ?? 'en-US'});
+        }
+      }
+    } catch (_) {
+      // Voice selection is best-effort; default voice will be used
+    }
+    _tts.setStartHandler(() { if (mounted) setState(() => _isSpeaking = true); });
+    _tts.setCompletionHandler(() { if (mounted) setState(() => _isSpeaking = false); });
+    _tts.setCancelHandler(() { if (mounted) setState(() => _isSpeaking = false); });
+    _tts.setErrorHandler((_) { if (mounted) setState(() => _isSpeaking = false); });
+  }
+
   @override
   void dispose() {
+    _tts.stop();
     _messageController.dispose();
     _scrollController.dispose();
     _avatarPulseController.dispose();
@@ -90,6 +132,10 @@ class _AICoachScreenState extends State<AICoachScreen>
       _messages.add({'role': 'coach', 'text': text, 'time': _formatTime()});
     });
     _scrollToBottom();
+    if (_voiceEnabled) {
+      _tts.stop();
+      _tts.speak(text);
+    }
   }
 
   void _scrollToBottom() {
@@ -187,24 +233,55 @@ class _AICoachScreenState extends State<AICoachScreen>
                         ),
                       ],
                     ),
-                    child: const Center(child: Text('🥒', style: TextStyle(fontSize: 16))),
+                    child: const Center(child: Text('💎', style: TextStyle(fontSize: 16))),
                   );
                 },
               ),
               const SizedBox(width: 10),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Lumina',
+                  const Text('Lumina',
                       style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary, fontSize: 16)),
-                  Text('Always here for you',
-                      style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                  Text(
+                    _isSpeaking
+                        ? 'Speaking…'
+                        : (_voiceEnabled ? 'Tap speaker to mute' : 'Voice is off'),
+                    style: TextStyle(
+                      color: _isSpeaking ? AppTheme.neonCyan : AppTheme.textMuted,
+                      fontSize: 10,
+                    ),
+                  ),
                 ],
               ),
             ],
           ),
           centerTitle: true,
+          actions: [
+            IconButton(
+              tooltip: _voiceEnabled ? 'Mute Lumina' : 'Unmute Lumina',
+              onPressed: () {
+                setState(() => _voiceEnabled = !_voiceEnabled);
+                StorageService().setBool('voice_guidance', _voiceEnabled);
+                if (!_voiceEnabled) {
+                  _tts.stop();
+                  _isSpeaking = false;
+                }
+              },
+              icon: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  _voiceEnabled
+                      ? (_isSpeaking ? Icons.graphic_eq : Icons.volume_up_rounded)
+                      : Icons.volume_off_rounded,
+                  key: ValueKey(_voiceEnabled.toString() + _isSpeaking.toString()),
+                  color: _isSpeaking ? AppTheme.neonCyan : AppTheme.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
         ),
         body: _buildChatView(),
       ),

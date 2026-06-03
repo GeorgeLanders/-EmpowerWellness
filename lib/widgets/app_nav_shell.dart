@@ -7,6 +7,7 @@ import '../screens/sos/sos_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/progress/progress_dashboard_screen.dart';
+import '../screens/meals/meal_log_screen.dart';
 
 class AppNavShell extends StatefulWidget {
   const AppNavShell({super.key});
@@ -131,6 +132,14 @@ void navigateToProgress(BuildContext context) {
   Navigator.push(
     context,
     MaterialPageRoute(builder: (context) => const ProgressDashboardScreen()),
+  );
+}
+
+/// Navigate to the Meal Log screen
+void navigateToMeals(BuildContext context) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const MealLogScreen()),
   );
 }
 

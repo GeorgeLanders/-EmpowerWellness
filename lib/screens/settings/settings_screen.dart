@@ -29,7 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _movementReminders = _storage.getBool('movement_reminders', defaultValue: true);
     _dailyCheckIn = _storage.getBool('daily_checkin', defaultValue: true);
     _soundEffects = _storage.getBool('sound_effects', defaultValue: true);
-    _voiceGuidance = _storage.getBool('voice_guidance', defaultValue: false);
+    _voiceGuidance = _storage.getBool('voice_guidance', defaultValue: true);
   }
 
   // ── Name Edit Dialog ──────────────────────────────────────────────

@@ -1,4 +1,6 @@
 
+import 'meal_entry.dart';
+
 class UserData {
   String name;
   int waterCups;
@@ -21,6 +23,10 @@ class UserData {
   List<String> completedExerciseIds; // exercise IDs completed
   int dioramaProgress;      // 0-100 progress toward Empire
 
+  // Meal tracking
+  List<MealEntry> meals;    // all logged meals (newest first)
+  int dailyCalorieGoal;     // target daily calories
+
   UserData({
     this.name = 'Friend',
     this.waterCups = 0,
@@ -38,6 +44,8 @@ class UserData {
     this.lastActiveDate = '',
     this.completedExerciseIds = const [],
     this.dioramaProgress = 0,
+    this.meals = const [],
+    this.dailyCalorieGoal = 1800,
   });
 
   Map<String, dynamic> toJson() => {
@@ -57,6 +65,8 @@ class UserData {
     'lastActiveDate': lastActiveDate,
     'completedExerciseIds': completedExerciseIds,
     'dioramaProgress': dioramaProgress,
+    'meals': meals.map((m) => m.toJson()).toList(),
+    'dailyCalorieGoal': dailyCalorieGoal,
   };
 
   factory UserData.fromJson(Map<String, dynamic> json) => UserData(
@@ -76,5 +86,10 @@ class UserData {
     lastActiveDate: json['lastActiveDate'] ?? '',
     completedExerciseIds: List<String>.from(json['completedExerciseIds'] ?? []),
     dioramaProgress: json['dioramaProgress'] ?? 0,
+    meals: (json['meals'] as List?)
+            ?.map((e) => MealEntry.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList() ??
+        const [],
+    dailyCalorieGoal: (json['dailyCalorieGoal'] ?? 1800) as int,
   );
 }
