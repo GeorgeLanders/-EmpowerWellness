@@ -48,6 +48,36 @@ def build_system_prompt(user_name: str) -> str:
     )
 
 
+def local_fallback(message: str) -> str:
+    """Lumina-style local response used when the upstream model returns empty content
+    (some models filter very short or trivial messages). Keeps the user experience
+    smooth when 'big-pickle' decides not to answer."""
+    lower = (message or "").lower().strip()
+    if not lower:
+        return "I am right here with you. Take your time — what would you like to talk about?"
+    if any(g in lower for g in ("hello", "hi", "hey", "good morning", "good evening")):
+        return "Hey there, friend! It is lovely to see you. How is your heart today?"
+    if any(w in lower for w in ("tired", "exhausted", "drained", "sleepy", "no energy")):
+        return "Rest is part of the journey, not a detour. Your world is still growing even when you pause. What is one small, gentle thing that feels doable right now?"
+    if any(w in lower for w in ("sad", "down", "depressed", "lonely", "crying")):
+        return "Your feelings are valid, and you are not alone in this. Even the strongest trees weather storms. What is one tiny thing that might bring you a moment of peace?"
+    if any(w in lower for w in ("anxious", "worried", "stress", "panic", "overwhelm", "nervous")):
+        return "Let us breathe through this together. Your world is safe, and you are doing better than you think. Would a short grounding exercise help right now?"
+    if any(w in lower for w in ("motivat", "lazy", "give up", "can't be bothered", "procrastin")):
+        return "Motivation comes and goes, but your commitment to showing up is the real magic. What is one small win you can claim today, even if it feels tiny?"
+    if any(w in lower for w in ("thank", "thanks", "appreciate")):
+        return "It means a lot that you shared that with me. Remember, I am here whenever you need a kind word or a steady hand."
+    if any(w in lower for w in ("sore", "pain", "hurt", "ache")):
+        return "Thank your body for telling you what it needs. Gentle movement, hydration, and rest are all acts of strength. How does it feel right now?"
+    if any(w in lower for w in ("sleep", "insomnia", "can't sleep", "awake", "bed")):
+        return "Sleep can be elusive, but your body knows how to rest. A slow breath in for four, out for six, can work wonders. Want to try together?"
+    if any(w in lower for w in ("bored", "nothing to do", "restless")):
+        return "Restlessness is just energy waiting for a direction. A short walk, a stretch, or even naming three things you can see can shift the moment. What sounds doable?"
+    if any(w in lower for w in ("eat", "food", "hungry", "meal", "snack")):
+        return "Nourishing yourself is one of the kindest things you can do. Something colorful and simple is often exactly what the body asks for. What sounds good right now?"
+    return "That is a powerful thing to share. Remember, your journey is not a sprint — it is a dance. Let us focus on one small step forward. What feels most empowering right now?"
+
+
 @app.get("/")
 def root():
     return {"status": "ok", "service": "Lumina Wellness Proxy"}
@@ -94,5 +124,15 @@ async def chat(req: ChatRequest):
             )
         data = resp.json()
 
-    reply = data["choices"][0]["message"]["content"]
+    try:
+        reply = (data["choices"][0]["message"]["content"] or "").strip()
+    except (KeyError, IndexError, TypeError):
+        reply = ""
+
+    # Some models (e.g. big-pickle) return empty content for very short or
+    # trivial messages. Fall back to a local Lumina-style response so the user
+    # never sees a silent bubble.
+    if not reply:
+        reply = local_fallback(req.message)
+
     return ChatResponse(reply=reply)
